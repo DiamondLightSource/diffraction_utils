@@ -1,0 +1,5 @@
+nexusformat
+numpy
+scipy
+h5py
+pytest
