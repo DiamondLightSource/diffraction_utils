@@ -386,6 +386,13 @@ class I07Nexus(NexusBase):
         return f"Region_{region_no}_{insert}"
 
 
+class I10Nexus(NexusBase):
+    """
+    This class extends NexusBase with methods useful for scraping information
+    from nexus files produced at the I10 beamline at Diamond.
+    """
+
+
 def _try_to_find_files(filenames: List[str],
                        additional_search_paths: List[str]):
     """
