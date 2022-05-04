@@ -7,6 +7,7 @@ coordinate system changes.
 import numpy as np
 
 from .diffractometer_base import DiffractometerBase
+from .frame_of_reference import Frame
 
 
 class Vector3:
@@ -15,7 +16,7 @@ class Vector3:
     methods/attributes for dealing with coordinate system changes.
     """
 
-    def __init__(self, array: np.ndarray, frame: str):
+    def __init__(self, array: np.ndarray, frame: Frame):
         self.array = np.array(array)
         self.frame = frame
 
@@ -40,7 +41,7 @@ class Vector3:
         """
         return self.array/np.linalg.norm(self.array)
 
-    def to_frame(self, frame: str, diffractometer: DiffractometerBase):
+    def to_frame(self, frame: Frame, diffractometer: DiffractometerBase):
         """
         Transforms to a frame with name `frame`.
 
@@ -54,7 +55,11 @@ class Vector3:
         raise NotImplementedError()
 
     @classmethod
-    def from_angles(cls, azimuth: float, polar: float, frame: str, length=1.0):
+    def from_angles(cls,
+                    azimuth: float,
+                    polar: float,
+                    frame: Frame,
+                    length=1.0):
         """
         Constructs a new Vector3 from an azimuthal angle, a polar angle and a
         frame of reference.
