@@ -17,8 +17,8 @@ with io.open(join(THIS_DIRECTORY, 'README.md'), encoding='utf-8') as f:
 setup(
     name='diffraction_utils',
     version='0.0.1',
-    license='Closed source idk',
-    description='An example package. Generated with cookiecutter-pylibrary.',
+    license='MIT',
+    description='A package designed to simplify working with diffraction data.',
     author='Richard Brearton',
     author_email='richardbrearton@gmail.com',
     long_description=LONG_DESCRIPTION,
