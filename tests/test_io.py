@@ -26,6 +26,7 @@ def test_attributes_i07_2021(path_to_2021_i07_nxs: str):
     assert i07nexus.default_nxdata_name == "excroi"
     assert i07nexus.default_nxdata.signal == "Region_1_average"
     assert i07nexus.default_axis_type == 'q'
+    assert i07nexus.scan_length == 51
 
 
 def test_excalibur_name():
@@ -55,6 +56,7 @@ def test_attributes_i07_04_2022(path_to_04_2022_i07_nxs: str):
     assert i07nexus.default_nxdata_name == "exr"
     assert i07nexus.default_nxdata.signal == "frameNo"  # ?????? ??????
     assert i07nexus.default_axis_type == 'tth'
+    assert i07nexus.scan_length == 13
 
 
 def test_attributes_i10_2022(path_to_2022_i10_nxs):
@@ -80,6 +82,23 @@ def test_attributes_i10_2022(path_to_2022_i10_nxs):
     assert i10nexus.default_axis_name == "th"
     assert i10nexus.default_nxdata_name == "pimtetiff"
     assert i10nexus.default_nxdata.signal == "image_data"
+    assert i10nexus.scan_length == 141
+
+
+def test_motor_positions_i10_2022(path_to_2022_i10_nxs):
+    """
+    Make sure that we can read out raw and virtual motor positions from the i10
+    nexus file.
+    """
+    # We didn't set the detector distance.
+    with pytest.warns(MissingMetadataWarning):
+        i10nexus = I10Nexus(path_to_2022_i10_nxs)
+
+    assert i10nexus.theta == 45
+    assert i10nexus.two_theta == 90
+    assert i10nexus.theta_area == 45
+    assert i10nexus.two_theta_area == 90
+    assert i10nexus.chi == 1
 
 
 def test_i10_2022_detector_distance(path_to_2022_i10_nxs):

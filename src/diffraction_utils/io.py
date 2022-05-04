@@ -13,7 +13,7 @@ class and its children.
 
 import json
 import os
-from typing import List
+from typing import List, Dict
 from warnings import warn
 
 
@@ -54,6 +54,13 @@ class NexusBase(DataFileBase):
     def __init__(self, local_path: str):
         super().__init__(local_path)
         self.nxfile = nxload(local_path)
+
+    @property
+    def scan_length(self) -> int:
+        """
+        Returns the number of data points collected during this scan.
+        """
+        return len(self.default_signal)
 
     @property
     def src_path(self):
@@ -457,14 +464,55 @@ class I10Nexus(NexusBase):
         return float(self.instrument.pgm.energy)
 
     @property
-    def default_signal(self) -> np.ndarray:
+    def motors(self) -> Dict[str, np.ndarray]:
         """
-        If our default signal is stored as an ascii string path, encode it as
-        utf-8.
+        A dictionary of all of the motor positions.
         """
-        if isinstance(super().default_signal, bytes):
-            return super().default_signal.decode('utf-8')
-        return super().default_signal
+        instr_motor_names = ["th", "tth", "chi"]
+        diff_motor_names = ["theta", "2_theta", "chi"]
+
+    @property
+    def theta(self) -> np.ndarray:
+        """
+        Returns the current theta value of the diffractometer, as parsed from
+        the nexus file. Note that this will be different to thArea in GDA.
+        """
+        print(self.instrument["th"].value._value)
+        print(self.instrument["tth"].value._value)
+        print(type(self.instrument["th"].value._value))
+        print(self.instrument.rasor.diff["2_theta"]._value)
+        print(type(self.instrument.rasor.diff["2_theta"]._value))
+        print(dict(self.instrument.rasor.diff))
+        return self.instrument["th"]._value
+
+    @property
+    def two_theta(self) -> np.ndarray:
+        """
+        Returns the current two-theta value of the diffractometer, as parsed
+        from the nexus file. Note that this will be different to tthArea in GDA.
+        """
+        return self.instrument["tth"]._value
+
+    @property
+    def theta_area(self) -> np.ndarray:
+        """
+        Returns the values of the thArea virtual motor during this scan.
+        """
+        return 180 - self.theta
+
+    @property
+    def two_theta_area(self) -> np.ndarray:
+        """
+        Returns the values of the tthArea virtual motor during this scan.
+        """
+        return self.two_theta + 90
+
+    @property
+    def chi(self) -> np.ndarray:
+        """
+        Returns the current chi value of the diffractometer.
+        """
+        return self.instrument["chi"]._value
 
 
 def _try_to_find_files(filenames: List[str],
