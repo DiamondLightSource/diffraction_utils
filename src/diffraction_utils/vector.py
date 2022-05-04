@@ -52,3 +52,26 @@ class Vector3:
                 transformation.
         """
         raise NotImplementedError()
+
+    @classmethod
+    def from_angles(cls, azimuth: float, polar: float, frame: str, length=1.0):
+        """
+        Constructs a new Vector3 from an azimuthal angle, a polar angle and a
+        frame of reference.
+
+        Args:
+            azimuth:
+                The azimuthal angle of the vector to create.
+            polar:
+                The polar angle of the vector to create.
+            frame:
+                The frame of reference our new vector will be in.
+            length:
+                The length of the new vector. Defaults to 1.0.
+        """
+        array = length * np.array([
+            np.sin(polar)*np.sin(azimuth),
+            np.cos(polar),
+            np.sin(polar)*np.cos(azimuth)
+        ])
+        return cls(array, frame)

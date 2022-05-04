@@ -63,3 +63,20 @@ def test_polar_angle():
 
     vec = Vector3([1, 0, 1], '')
     assert_allclose(vec.polar_angle, np.pi/2)
+
+
+def test_from_angles():
+    """
+    Make sure that we can construct vectors from spherical polar angles.
+    """
+    vec = Vector3.from_angles(np.pi/2, np.pi/4, '', np.sqrt(2))
+    assert_allclose(np.array([1, 1, 0]), vec.array, atol=1e-7)
+
+    vec = Vector3.from_angles(np.pi/2, np.pi/4, '')
+    assert_allclose(np.array([1, 1, 0])/np.sqrt(2), vec.array, atol=1e-7)
+
+    vec = Vector3.from_angles(0, 0, '')
+    assert_allclose(np.array([0, 1, 0]), vec.array, atol=1e-7)
+
+    vec = Vector3.from_angles(-np.pi/2, 3*np.pi/4, '', length=np.sqrt(2))
+    assert_allclose(np.array([-1, -1, 0]), vec.array, atol=1e-7)
