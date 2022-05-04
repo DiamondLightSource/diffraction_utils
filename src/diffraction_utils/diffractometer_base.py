@@ -4,6 +4,7 @@ This module contains the DiffractometerBase class.
 
 from abc import ABC, abstractmethod
 
+import numpy as np
 from scipy.spatial.transform import Rotation
 
 from .frame_of_reference import Frame
@@ -17,29 +18,30 @@ class DiffractometerBase(ABC):
     have.
     """
 
-    def __init__(self, nexus: NexusBase) -> None:
+    def __init__(self, nexus: NexusBase, sample_oop: np.ndarray) -> None:
         self.nexus = nexus
+        self.sample_oop = np.array(sample_oop)
 
     @property
     @abstractmethod
     def u_matrix(self) -> Rotation:
         """
-        The Rotation from of the so-called "U" rotation matrix.
+        The scipy Rotation from of the so-called "U" rotation matrix.
         """
 
     @property
     @abstractmethod
     def b_matrix(self) -> Rotation:
         """
-        The Rotation form of the so-called "B" rotation matrix.
+        The scipy Rotation form of the so-called "B" rotation matrix.
         """
 
     @property
-    @abstractmethod
     def ub_matrix(self) -> Rotation:
         """
-        The Rotation form of the so-called "UB" rotation matrix.
+        The scipy Rotation form of the so-called "UB" rotation matrix.
         """
+        return self.u_matrix * self.b_matrix
 
     @property
     @abstractmethod
