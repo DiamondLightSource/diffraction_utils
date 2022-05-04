@@ -413,50 +413,6 @@ class I10Nexus(NexusBase):
                 "input manually when using this library if it is needed."))
 
     @property
-    def local_data_path(self) -> str:
-        """
-        The local path to the data (.h5) file. Note that this isn't in the
-        NexusBase class because it need not be reasonably expected to point at a
-        .h5 file.
-
-        Raises:
-            FileNotFoundError if the data file cant be found.
-        """
-        file = _try_to_find_files(
-            [self._src_data_path], [self.local_path])[0]
-        return file
-
-    @property
-    def _src_data_path(self):
-        """
-        Returns the raw path to the data file. This is useless if you aren't on
-        site, but used by islatu to guess where you've stored the data file
-        locally.
-        """
-        # This is far from ideal; there currently seems to be no standard way
-        # to refer to point at information stored outside of the nexus file.
-        # If you're a human, it's easy enough to find, but with code this is
-        # a pretty rubbish task. Here I just grab the first .h5 file I find
-        # and run with it.
-        found_h5_files = []
-
-        def recurse_over_nxgroups(nx_object, found_h5_files):
-            """
-            Recursively looks for nxgroups in nx_object that, when cast to a
-            string, end in .h5.
-            """
-            for key in nx_object:
-                new_obj = nx_object[key]
-                if str(new_obj).endswith(".h5"):
-                    found_h5_files.append(str(new_obj))
-                if isinstance(new_obj, nx.NXgroup):
-                    recurse_over_nxgroups(new_obj, found_h5_files)
-
-        recurse_over_nxgroups(self.nxfile, found_h5_files)
-
-        return found_h5_files[0]
-
-    @property
     def probe_energy(self):
         """
         Returns the energy of the probe particle parsed from this NexusFile.
@@ -464,12 +420,26 @@ class I10Nexus(NexusBase):
         return float(self.instrument.pgm.energy)
 
     @property
-    def motors(self) -> Dict[str, np.ndarray]:
+    def _motors(self) -> Dict[str, np.ndarray]:
         """
-        A dictionary of all of the motor positions.
+        A dictionary of all of the motor positions. This is only useful if you
+        know some diffractometer specific keys, so it's kept private to
+        encourage users to directly access the cleaner theta, two_theta etc.
+        properties.
         """
         instr_motor_names = ["th", "tth", "chi"]
         diff_motor_names = ["theta", "2_theta", "chi"]
+
+        motors_dict = {
+            x: np.ones(self.scan_length)*self.instrument.rasor.diff[y]._value
+            for x, y in zip(instr_motor_names, diff_motor_names)}
+
+        for name in instr_motor_names:
+            try:
+                motors_dict[name] = self.instrument[name].value._value
+            except KeyError:
+                pass
+        return motors_dict
 
     @property
     def theta(self) -> np.ndarray:
@@ -477,13 +447,7 @@ class I10Nexus(NexusBase):
         Returns the current theta value of the diffractometer, as parsed from
         the nexus file. Note that this will be different to thArea in GDA.
         """
-        print(self.instrument["th"].value._value)
-        print(self.instrument["tth"].value._value)
-        print(type(self.instrument["th"].value._value))
-        print(self.instrument.rasor.diff["2_theta"]._value)
-        print(type(self.instrument.rasor.diff["2_theta"]._value))
-        print(dict(self.instrument.rasor.diff))
-        return self.instrument["th"]._value
+        return self._motors["th"]
 
     @property
     def two_theta(self) -> np.ndarray:
@@ -491,7 +455,7 @@ class I10Nexus(NexusBase):
         Returns the current two-theta value of the diffractometer, as parsed
         from the nexus file. Note that this will be different to tthArea in GDA.
         """
-        return self.instrument["tth"]._value
+        return self._motors["tth"]
 
     @property
     def theta_area(self) -> np.ndarray:
@@ -512,7 +476,7 @@ class I10Nexus(NexusBase):
         """
         Returns the current chi value of the diffractometer.
         """
-        return self.instrument["chi"]._value
+        return self._motors["chi"]
 
 
 def _try_to_find_files(filenames: List[str],

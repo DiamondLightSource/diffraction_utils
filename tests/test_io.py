@@ -2,6 +2,9 @@
 This module tests diffraction_utils' io module.
 """
 
+# Of course we need this while testing.
+# pylint: disable=protected-access
+
 import pytest
 
 from diffraction_utils.io import I07Nexus, I10Nexus, MissingMetadataWarning
@@ -94,11 +97,14 @@ def test_motor_positions_i10_2022(path_to_2022_i10_nxs):
     with pytest.warns(MissingMetadataWarning):
         i10nexus = I10Nexus(path_to_2022_i10_nxs)
 
-    assert i10nexus.theta == 45
-    assert i10nexus.two_theta == 90
-    assert i10nexus.theta_area == 45
-    assert i10nexus.two_theta_area == 90
-    assert i10nexus.chi == 1
+    assert i10nexus._motors["th"][0] == 130.37158560119
+    assert i10nexus._motors["tth"][1] == -9.969088891715
+    assert i10nexus._motors["chi"][2] == 88.9999998346
+    assert i10nexus.theta[0] == 130.37158560119
+    assert i10nexus.two_theta[1] == -9.969088891715
+    assert i10nexus.theta_area[0] == 180 - 130.37158560119
+    assert i10nexus.two_theta_area[1] == 90 - 9.969088891715
+    assert i10nexus.chi[5] == 88.9999998346  # Chi wasn't scanned.
 
 
 def test_i10_2022_detector_distance(path_to_2022_i10_nxs):
