@@ -4,12 +4,12 @@ islatu.io module. This class provides a consistent way to refer to metadata
 returned by different detectors/instruments.
 """
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 
 import numpy as np
 
 
-class DataFileBase:
+class DataFileBase(ABC):
     """
     An ABC for classes that store metadata parsed from data files. This defines
     the properties that must be implemented by parsing classes.
@@ -42,14 +42,5 @@ class DataFileBase:
         """
         Returns the name of the default axis, as it was recorded in the data
         file stored at local_path.
-        """
-        raise NotImplementedError()
-
-    @property
-    @abstractmethod
-    def default_axis_type(self) -> str:
-        """
-        Returns what type of default axis we have. Options are 'q', 'th' or
-        'tth'.
         """
         raise NotImplementedError()

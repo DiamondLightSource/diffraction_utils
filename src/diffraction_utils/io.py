@@ -14,7 +14,7 @@ class and its children.
 import json
 import os
 from typing import List
-from abc import abstractmethod
+from warnings import warn
 
 
 import nexusformat.nexus.tree as nx
@@ -25,6 +25,12 @@ import numpy as np
 from .region import Region
 from .debug import debug
 from .data_file import DataFileBase
+
+
+class MissingMetadataWarning(UserWarning):
+    """
+    Warns a user that some metadata is missing
+    """
 
 
 class NexusBase(DataFileBase):
@@ -132,12 +138,6 @@ class NexusBase(DataFileBase):
         Returns the default NXdata.
         """
         return self.entry[self.default_nxdata_name]
-
-    # A hack to tell pylint that this class is still meant to be abstract.
-    @property
-    @abstractmethod
-    def default_axis_type(self) -> str:
-        return super().default_axis_type()
 
 
 class I07Nexus(NexusBase):
@@ -282,7 +282,7 @@ class I07Nexus(NexusBase):
         """
         Returns the energy of the probe particle parsed from this NexusFile.
         """
-        return float(self.instrument.dcm1energy.value)
+        return float(self.instrument.dcm1energy.value)*1e3
 
     @property
     def transmission(self):
@@ -380,8 +380,7 @@ class I07Nexus(NexusBase):
         elif kind in ('height', 'Height'):
             insert = 'Height'
         else:
-            raise ValueError(
-                "Didn't recognise 'kind' argument.")
+            raise ValueError("Didn't recognise 'kind' argument.")
 
         return f"Region_{region_no}_{insert}"
 
@@ -391,6 +390,81 @@ class I10Nexus(NexusBase):
     This class extends NexusBase with methods useful for scraping information
     from nexus files produced at the I10 beamline at Diamond.
     """
+
+    # We might need to check which instrument we're using at some point.
+    rasor_instrument = "rasor"
+
+    def __init__(self, local_path: str, detector_distance: float = None):
+        super().__init__(local_path)
+        self.detector_distance = detector_distance
+
+        # Warn the user if detector distance hasn't been set.
+        if self.detector_distance is None:
+            warn(MissingMetadataWarning(
+                "Detector distance has not been set. At I10, sample-detector "
+                "distance is not recorded in the nexus file, and must be "
+                "input manually when using this library if it is needed."))
+
+    @property
+    def local_data_path(self) -> str:
+        """
+        The local path to the data (.h5) file. Note that this isn't in the
+        NexusBase class because it need not be reasonably expected to point at a
+        .h5 file.
+
+        Raises:
+            FileNotFoundError if the data file cant be found.
+        """
+        file = _try_to_find_files(
+            [self._src_data_path], [self.local_path])[0]
+        return file
+
+    @property
+    def _src_data_path(self):
+        """
+        Returns the raw path to the data file. This is useless if you aren't on
+        site, but used by islatu to guess where you've stored the data file
+        locally.
+        """
+        # This is far from ideal; there currently seems to be no standard way
+        # to refer to point at information stored outside of the nexus file.
+        # If you're a human, it's easy enough to find, but with code this is
+        # a pretty rubbish task. Here I just grab the first .h5 file I find
+        # and run with it.
+        found_h5_files = []
+
+        def recurse_over_nxgroups(nx_object, found_h5_files):
+            """
+            Recursively looks for nxgroups in nx_object that, when cast to a
+            string, end in .h5.
+            """
+            for key in nx_object:
+                new_obj = nx_object[key]
+                if str(new_obj).endswith(".h5"):
+                    found_h5_files.append(str(new_obj))
+                if isinstance(new_obj, nx.NXgroup):
+                    recurse_over_nxgroups(new_obj, found_h5_files)
+
+        recurse_over_nxgroups(self.nxfile, found_h5_files)
+
+        return found_h5_files[0]
+
+    @property
+    def probe_energy(self):
+        """
+        Returns the energy of the probe particle parsed from this NexusFile.
+        """
+        return float(self.instrument.pgm.energy)
+
+    @property
+    def default_signal(self) -> np.ndarray:
+        """
+        If our default signal is stored as an ascii string path, encode it as
+        utf-8.
+        """
+        if isinstance(super().default_signal, bytes):
+            return super().default_signal.decode('utf-8')
+        return super().default_signal
 
 
 def _try_to_find_files(filenames: List[str],
