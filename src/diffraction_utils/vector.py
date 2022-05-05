@@ -92,11 +92,14 @@ def rot_from_a_to_b(vector_a: Vector3, vector_b: Vector3):
     Generates a rotation that will rotate arrays parallel to vector_a so that
     they're parallel to vector_b.
 
+    TODO: This should handle instance of Vector3 with non-orthonormal basis
+        vectors.
+
     Args:
         vector_a:
-            The array we want to rotate from.
+            The vector we want to rotate from.
         vector_b:
-            The array we want to rotate to.
+            The vector we want to rotate to.
 
     Raises:
         ValueError if vector_a and vector_b aren't in the same frame.
