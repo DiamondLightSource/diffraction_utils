@@ -94,7 +94,7 @@ class DiffractometerBase(ABC):
         """
         return self.get_u_matrix(scan_index) * self.get_b_matrix()
 
-    def to_frame(self, vector: Vector3, to_frame: Frame) -> None:
+    def rotate_vector_to_frame(self, vector: Vector3, to_frame: Frame) -> None:
         """
         Rotates the vector passed as an argument into the frame specified by the
         frame argument.
