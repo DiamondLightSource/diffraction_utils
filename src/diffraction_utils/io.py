@@ -476,7 +476,7 @@ class I10Nexus(NexusBase):
         """
         Returns the current chi value of the diffractometer.
         """
-        return self._motors["chi"]
+        return 90 - self._motors["chi"]
 
 
 def _try_to_find_files(filenames: List[str],
