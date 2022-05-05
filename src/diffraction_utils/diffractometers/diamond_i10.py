@@ -40,7 +40,7 @@ class I10RasorDiffractometer(DiffractometerBase):
 
     def get_u_matrix(self, scan_index: int) -> Rotation:
         # The following are the axes in the lab frame when all motors are @0.
-        theta_axis = np.array([-1, 0, 0])
+        theta_axis = np.array([1, 0, 0])
         chi_axis = np.array([0, 0, 1])
 
         # We need to work out what our current chi, theta and 2theta values are.
@@ -75,7 +75,7 @@ class I10RasorDiffractometer(DiffractometerBase):
                                              degrees=True)
 
         # Act this rotation on the beam.
-        beam_direction = [0, 0, 1]
+        beam_direction = np.array([0, 0, 1])
         detector_vec = Vector3(two_theta_rot.apply(beam_direction),
                                Frame(Frame.lab, self, frame.scan_index))
 
