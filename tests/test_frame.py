@@ -22,3 +22,20 @@ def test_attr_names():
     assert frame.frame_name == ''
     assert frame.diffractometer is None
     assert frame.scan_index is None
+
+
+def test_frame_equality(rasor):
+    """
+    Make sure that our custom __eq__ is working.
+    """
+    frame1 = Frame('x', rasor, None)
+    frame2 = Frame('x', rasor, None)
+
+    assert frame1 == frame2
+
+    frame3 = Frame('x', rasor, 3)
+    assert frame3 != frame1
+
+    frame4 = Frame('u', rasor, None)
+    assert frame4 != frame1
+    assert frame4 != frame3

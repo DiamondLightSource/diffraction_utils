@@ -40,3 +40,14 @@ class Frame:
         self.frame_name = frame_name
         self.diffractometer = diffractometer
         self.scan_index = scan_index
+
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, type(self)):
+            return False
+
+        frame_name_eq = self.frame_name == __o.frame_name
+        scan_idx_eq = self.scan_index == __o.scan_index
+        diffractometer_eq = (self.diffractometer.data_file.local_path ==
+                             __o.diffractometer.data_file.local_path)
+
+        return frame_name_eq and scan_idx_eq and diffractometer_eq
