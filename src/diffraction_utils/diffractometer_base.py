@@ -8,7 +8,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from .frame_of_reference import Frame
-from .io import NexusBase
+from .data_file import DataFileBase
 from .vector import Vector3, rot_from_a_to_b
 
 
@@ -18,12 +18,28 @@ class DiffractometerBase(ABC):
     have.
     """
 
-    def __init__(self, nexus: NexusBase, sample_oop: np.ndarray) -> None:
-        self.nexus = nexus
+    def __init__(self, data_file: DataFileBase, sample_oop: np.ndarray) -> None:
+        self.data_file = data_file
         if not isinstance(sample_oop, Vector3):
             sample_oop = np.array(sample_oop)
             frame = Frame(Frame.sample_holder, self)
             self.sample_oop = Vector3(sample_oop, frame)
+
+    @abstractmethod
+    def get_detector_vector(self, frame: Frame) -> Vector3:
+        """
+        Returns a unit vector that points towards the detector in the frame
+        given by the frame argument.
+
+        Args:
+            frame (Frame):
+                An instance of Frame describing the frame in which we want a
+                unit vector that points towards the detector.
+
+        Returns:
+            An instance of Vector3 corresponding to a unit vector that points
+            towards the detector.
+        """
 
     @abstractmethod
     def get_u_matrix(self, scan_index: int) -> Rotation:
@@ -89,34 +105,37 @@ class DiffractometerBase(ABC):
             frame:
                 The frame into which the vector will be rotated.
         """
-        # Return the identity if no rotation is required.
+        # Don't rotate if no rotation is required.
         if vector.frame.frame_name == to_frame.frame_name:
-            return Rotation.from_rotvec([0, 0, 0])
+            return
 
         # Okay, we're changing frame. We have to handle each case individually.
         match vector.frame.frame_name, to_frame.frame_name:
             case Frame.lab, Frame.hkl:
                 # To go from the lab to hkl we need the inverse of UB.
-                return self.get_ub_matrix(vector.frame.scan_index).inv()
+                rot = self.get_ub_matrix(vector.frame.scan_index).inv()
             case Frame.lab, Frame.sample_holder:
                 # To go from the lab to the sample holder we just need U^-1.
-                return self.get_u_matrix(vector.frame.scan_index).inv()
+                rot = self.get_u_matrix(vector.frame.scan_index).inv()
 
             case Frame.sample_holder, Frame.lab:
                 # We can use U to go from the sample holder to the lab.
-                return self.get_u_matrix(to_frame.scan_index)
+                rot = self.get_u_matrix(to_frame.scan_index)
             case Frame.sample_holder, Frame.hkl:
                 # We can use B^-1 to go from the sample holder to hkl space.
-                return self.get_b_matrix().inv()
+                rot = self.get_b_matrix().inv()
 
             case Frame.hkl, Frame.lab:
                 # This is precisely what the UB matrix is for!
-                return self.get_ub_matrix(to_frame.scan_index)
+                rot = self.get_ub_matrix(to_frame.scan_index)
             case Frame.hkl, Frame.sample_holder:
                 # This is what defines the B matrix.
-                return self.get_b_matrix()
+                rot = self.get_b_matrix()
 
             case _:
                 # Invalid frame name, raise an error
                 raise ValueError(
                     "Tried to rotate to or from a frame with an invalid name.")
+
+        # Apply the rotation to the vector we were given.
+        vector.array = rot.apply(vector.array)
