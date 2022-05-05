@@ -29,7 +29,7 @@ from .data_file import DataFileBase
 
 class MissingMetadataWarning(UserWarning):
     """
-    Warns a user that some metadata is missing
+    Warns a user that some metadata is missing.
     """
 
 
@@ -469,7 +469,7 @@ class I10Nexus(NexusBase):
         """
         Returns the values of the tthArea virtual motor during this scan.
         """
-        return self.two_theta + 90
+        return 90 - self.two_theta
 
     @property
     def chi(self) -> np.ndarray:
