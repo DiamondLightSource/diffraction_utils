@@ -2,9 +2,15 @@
 The pytest conftest file.
 """
 
+# Always necessary in conftest files.
+# pylint: disable=redefined-outer-name
+
 import os
 
 from pytest import fixture
+
+from diffraction_utils.io import I10Nexus
+from diffraction_utils.diffractometers.diamond_i10 import I10RasorDiffractometer
 
 
 @fixture
@@ -37,3 +43,14 @@ def path_to_2022_i10_nxs(path_to_resources: str):
     Returns a path to a .nxs file acquired at beamline i10 in 2022.
     """
     return path_to_resources + "i10_2022.nxs"
+
+
+@fixture
+def rasor(path_to_2022_i10_nxs):
+    """
+    Returns an instance of I10RasorDiffractometer.
+    """
+    nexus = I10Nexus(path_to_2022_i10_nxs,
+                     detector_distance=0.5)  # 50 cm detector distance.
+    return I10RasorDiffractometer(nexus, [0, 1, 0],
+                                  I10RasorDiffractometer.area_detector)

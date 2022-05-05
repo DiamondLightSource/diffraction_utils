@@ -139,3 +139,4 @@ class DiffractometerBase(ABC):
 
         # Apply the rotation to the vector we were given.
         vector.array = rot.apply(vector.array)
+        vector.frame = to_frame
