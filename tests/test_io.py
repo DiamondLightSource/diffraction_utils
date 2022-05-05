@@ -104,7 +104,7 @@ def test_motor_positions_i10_2022(path_to_2022_i10_nxs):
     assert i10nexus.two_theta[1] == -9.969088891715
     assert i10nexus.theta_area[0] == 180 - 130.37158560119
     assert i10nexus.two_theta_area[1] == 90 - 9.969088891715
-    assert i10nexus.chi[5] == 88.9999998346  # Chi wasn't scanned.
+    assert i10nexus.chi[5] == 90 - 88.9999998346  # Chi wasn't scanned.
 
 
 def test_i10_2022_detector_distance(path_to_2022_i10_nxs):
