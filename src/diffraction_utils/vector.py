@@ -57,7 +57,7 @@ class Vector3:
                 The diffractometer we should use to carry out the
                 transformation.
         """
-        raise NotImplementedError()
+        diffractometer.rotate_vector_to_frame(self, frame)
 
     @classmethod
     def from_angles(cls,
