@@ -3,7 +3,10 @@ This module contains the Frame class, which is used to describe the frame of
 reference in which vectors live.
 """
 
-from .diffractometer_base import DiffractometerBase
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .diffractometer_base import DiffractometerBase
 
 
 class Frame:
@@ -32,7 +35,7 @@ class Frame:
 
     def __init__(self,
                  frame_name: str,
-                 diffractometer: DiffractometerBase = None,
+                 diffractometer: 'DiffractometerBase' = None,
                  scan_index: int = None):
         self.frame_name = frame_name
         self.diffractometer = diffractometer
