@@ -46,6 +46,17 @@ def path_to_2022_i10_nxs(path_to_resources: str):
 
 
 @fixture
+def path_to_i10_data():
+    """
+    Returns the path to i10 data. This doesn't need to worry about paths for
+    the diamond system, because _try_to_find_files will automagically find the
+    file anyways.
+    """
+    return ('/Users/richard/Data/i10/07_04_22_Sam_Mapper_test/'
+            '693862-pimte-files/')
+
+
+@fixture
 def rasor(path_to_2022_i10_nxs):
     """
     Returns an instance of I10RasorDiffractometer.

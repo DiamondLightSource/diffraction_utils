@@ -13,13 +13,14 @@ class and its children.
 
 import json
 import os
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from warnings import warn
 
 
 import nexusformat.nexus.tree as nx
-from nexusformat.nexus import nxload
 import numpy as np
+from nexusformat.nexus import nxload
+from PIL import Image as PILImageModule
 
 
 from .region import Region
@@ -391,6 +392,29 @@ class I07Nexus(NexusBase):
 
         return f"Region_{region_no}_{insert}"
 
+    @property
+    def pixel_size(self) -> float:
+        """
+        Returns the side length of pixels in the detector that's being used.
+        """
+        if self.detector_name in ['excroi', 'exr']:
+            raise NotImplementedError()
+        if self.detector_name in ['pilatus']:
+            raise NotImplementedError()
+        raise ValueError(f"Detector name {self.detector_name} is unknown.")
+
+    @property
+    def image_shape(self) -> float:
+        """
+        Returns the shape of the images we expect to be recorded by this
+        detector.
+        """
+        if self.detector_name in ['excroi', 'exr']:
+            return 515, 2069
+        if self.detector_name in ['pilatus']:
+            return 1475, 1679
+        raise ValueError(f"Detector name {self.detector_name} is unknown.")
+
 
 class I10Nexus(NexusBase):
     """
@@ -477,6 +501,63 @@ class I10Nexus(NexusBase):
         Returns the current chi value of the diffractometer.
         """
         return 90 - self._motors["chi"]
+
+    @property
+    def pixel_size(self) -> float:
+        """
+        All detectors on I10 have 13.5 micron pixels.
+        """
+        return 13.5e-6
+
+    @property
+    def image_shape(self) -> Tuple[int]:
+        """
+        Returns the shape of detector images. This is easy in I10, since they're
+        both 2048**2 square detectors.
+        """
+        return 2048, 2048
+
+    @property
+    def raw_image_paths(self) -> List[str]:
+        """
+        Returns a list of paths to the .tiff images recorded during this scan.
+        These are the same paths that were originally recorded during the scan,
+        so will point at some directory in the diamond filesystem.
+        """
+        return [x.decode('utf-8') for x in self.default_signal]
+
+    def get_local_image_paths(self, clue: str = '') -> List[str]:
+        """
+        Returns a list of local image paths. Raises FileNotFoundError if any of
+        the images cannot be found. These local paths can be used to directly
+        load the images.
+
+        Args:
+            clue (str):
+                A hint as to where these images might be stored. A directory
+                would make life easier. If this isn't given, this method will
+                still search a large number of directories to try to find the
+                images.
+
+        Raises:
+            FileNotFoundError if any of the images cant be found.
+        """
+        return _try_to_find_files(self.raw_image_paths, [clue, self.local_path])
+
+    def load_image_arrays(self, clue: str = '') -> List[np.ndarray]:
+        """
+        Tries to locate the images associated with this nexus file, if there are
+        any. These images are stored as numpy arrays.
+
+        Args:
+            clue (str):
+                A hint as to where these images might be stored. A directory
+                would make life easier. If this isn't given, this method will
+                still search a large number of directories to try to find the
+                images.
+        """
+        return [np.array(PILImageModule.open(x))
+                for x in self.get_local_image_paths(clue)]
 
 
 def _try_to_find_files(filenames: List[str],
