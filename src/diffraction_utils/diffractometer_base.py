@@ -41,6 +41,28 @@ class DiffractometerBase(ABC):
             towards the detector.
         """
 
+    def get_incident_beam(self, frame: Frame) -> Vector3:
+        """
+        Returns a unit vector that points in the direction of the incident beam
+        in the frame given by the frame argument.
+
+        Args:
+            frame (Frame):
+                An instance of Frame describing the frame of reference in which
+                we want a unit vector pointing parallel to the incident beam.
+
+        Returns:
+            An instance of Vector3 corresponding to a unit vector that points
+            parallel to the incident beam.
+        """
+        # In the lab frame, our coordinate system is defined such that the beam
+        # is always travelling along [0, 0, 1].
+        lab_beam = Vector3([0, 0, 1], Frame(Frame.lab, self, frame.scan_index))
+
+        # Now simply rotate the beam into the desired frame and return it!
+        self.rotate_vector_to_frame(lab_beam, frame)
+        return lab_beam
+
     @abstractmethod
     def get_u_matrix(self, scan_index: int) -> Rotation:
         """

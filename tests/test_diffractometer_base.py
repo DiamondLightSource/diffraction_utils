@@ -7,7 +7,7 @@ methods implemented in DiffractometerBase.
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
-
+from scipy.spatial.transform import Rotation
 
 from diffraction_utils.diffractometers.diamond_i10 import I10RasorDiffractometer
 from diffraction_utils.frame_of_reference import Frame
@@ -87,3 +87,21 @@ def test_rotate_vector_to_frame_03(rasor: I10RasorDiffractometer):
 
     with pytest.raises(ValueError):
         rasor.rotate_vector_to_frame(vec, Frame(Frame.hkl, rasor))
+
+
+def test_get_incident_beam(rasor: I10RasorDiffractometer):
+    """
+    Make sure that our incident beam is being generated correctly.
+    """
+    sh_frame = Frame(Frame.sample_holder, rasor, 70)
+    beam_on_sample = rasor.get_incident_beam(sh_frame)
+
+    # Motor values read manually from .nxs file.
+    theta = 49.6284 - 3.5/2
+    chi = 1
+
+    # Prepare to rotate the beam array back to the lab.
+    rot = Rotation.from_rotvec(np.array([-1, 0, 0])*theta, degrees=True)
+    rot *= Rotation.from_rotvec(np.array([0, 0, -1])*chi, degrees=True)
+
+    assert_allclose(rot.apply(beam_on_sample.array), [0, 0, 1], atol=1e-6)
