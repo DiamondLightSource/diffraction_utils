@@ -20,6 +20,7 @@ class DiffractometerBase(ABC):
 
     def __init__(self, data_file: DataFileBase, sample_oop: np.ndarray) -> None:
         self.data_file = data_file
+        self.sample_oop = sample_oop
         if not isinstance(sample_oop, Vector3):
             sample_oop = np.array(sample_oop)
             frame = Frame(Frame.sample_holder, self)
