@@ -57,13 +57,6 @@ class NexusBase(DataFileBase):
         self.nxfile = nxload(local_path)
 
     @property
-    def scan_length(self) -> int:
-        """
-        Returns the number of data points collected during this scan.
-        """
-        return len(self.default_signal)
-
-    @property
     def src_path(self):
         """
         The name of this nexus file, as it was recorded when the nexus file was

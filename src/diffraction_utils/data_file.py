@@ -44,3 +44,10 @@ class DataFileBase(ABC):
         file stored at local_path.
         """
         raise NotImplementedError()
+
+    @property
+    def scan_length(self) -> int:
+        """
+        Returns the number of data points collected during this scan.
+        """
+        return len(self.default_axis)
