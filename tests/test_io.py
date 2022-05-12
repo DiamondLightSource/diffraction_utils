@@ -198,3 +198,19 @@ def test_load_image_arrays(path_to_2022_i10_nxs, path_to_i10_data):
         assert isinstance(arr, np.ndarray)
         # Make sure the i10nexus.image_shape is set correctly while we're at it.
         assert arr.shape == i10nexus.image_shape
+
+
+@pytest.mark.skipif(not has_data(), reason="Requires local data.")
+def teest_load_image_array(path_to_2022_i10_nxs, path_to_i10_data):
+    """
+    Make sure that we can load an individual image array. This test is only run
+    on my (richard.brearton@diamond.ac.uk) local computer, or on the diamond
+    servers. In both cases, the code should have access to all 141 images in
+    this scan.
+    """
+    i10nexus = I10Nexus(path_to_2022_i10_nxs, 10)
+    arr = i10nexus.load_image_array(70, path_to_i10_data)
+
+    assert isinstance(arr, np.ndarray)  # Make sure it's an array.
+    assert arr.shape == (2048, 2048)  # Make sure array has the right shape.
+    assert np.max(arr) > 0  # Make sure it isn't just an array of zeroes.

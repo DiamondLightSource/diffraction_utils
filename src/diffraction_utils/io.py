@@ -565,6 +565,23 @@ class I10Nexus(NexusBase):
                 print(f"Loading image number {count}.", end='\r', flush=True)
         return arrs
 
+    def load_image_array(self, index: int, clue: str = '') -> List[np.ndarray]:
+        """
+        Tries to locate an image associated with this nexus file. If the image
+        is found, it is loaded as a numpy array and returned.
+
+        Args:
+            index (int):
+                The index of the image array in the get_local_image_paths list.
+            clue (str):
+                A hint as to where these images might be stored. A directory
+                would make life easier. If this isn't given, this method will
+                still search a large number of directories to try to find the
+                images.
+        """
+        path = self.get_local_image_paths(clue)[index]
+        return np.array(PILImageModule.open(path))
+
 
 def _try_to_find_files(filenames: List[str],
                        additional_search_paths: List[str]):
