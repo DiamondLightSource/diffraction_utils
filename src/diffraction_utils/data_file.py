@@ -20,7 +20,7 @@ class DataFileBase(ABC):
 
     @property
     @abstractmethod
-    def probe_energy(self):
+    def parse_probe_energy(self):
         """
         This must be overridden.
         """

@@ -149,6 +149,12 @@ class I07Nexus(NexusBase):
     excalibur_detector_2021 = "excroi"
     excalibur_04_2022 = "exr"
 
+    def __init__(self, local_path: str):
+        super().__init__(local_path)
+        # The nexusformat package is fragile, badly written and breaks in
+        # parallel contexts. To get around this, some values are initialised.
+        self.probe_energy = self.parse_probe_energy
+
     @property
     def local_data_path(self) -> str:
         """
@@ -279,7 +285,7 @@ class I07Nexus(NexusBase):
         raise NotImplementedError()
 
     @property
-    def probe_energy(self):
+    def parse_probe_energy(self):
         """
         Returns the energy of the probe particle parsed from this NexusFile.
         """
@@ -429,8 +435,20 @@ class I10Nexus(NexusBase):
                 "distance is not recorded in the nexus file, and must be "
                 "input manually when using this library if it is needed."))
 
+        # The nexusformat package is fragile, badly written and breaks in
+        # parallel contexts. To get around this, some values are initialised.
+        self.probe_energy = self.parse_probe_energy
+        self.theta = self.parse_theta
+        self.theta_area = self.parse_theta_area
+        self.two_theta = self.parse_two_theta
+        self.two_theta_area = self.parse_two_theta_area
+        self.chi = self.parse_chi
+        self.image_shape = self.parse_image_shape
+        self.pixel_size = self.parse_pixel_size
+        self.raw_image_paths = self.parse_raw_image_paths
+
     @property
-    def probe_energy(self):
+    def parse_probe_energy(self):
         """
         Returns the energy of the probe particle parsed from this NexusFile.
         """
@@ -459,7 +477,7 @@ class I10Nexus(NexusBase):
         return motors_dict
 
     @property
-    def theta(self) -> np.ndarray:
+    def parse_theta(self) -> np.ndarray:
         """
         Returns the current theta value of the diffractometer, as parsed from
         the nexus file. Note that this will be different to thArea in GDA.
@@ -467,7 +485,7 @@ class I10Nexus(NexusBase):
         return self._motors["th"]
 
     @property
-    def two_theta(self) -> np.ndarray:
+    def parse_two_theta(self) -> np.ndarray:
         """
         Returns the current two-theta value of the diffractometer, as parsed
         from the nexus file. Note that this will be different to tthArea in GDA.
@@ -475,35 +493,35 @@ class I10Nexus(NexusBase):
         return self._motors["tth"]
 
     @property
-    def theta_area(self) -> np.ndarray:
+    def parse_theta_area(self) -> np.ndarray:
         """
         Returns the values of the thArea virtual motor during this scan.
         """
         return 180 - self.theta
 
     @property
-    def two_theta_area(self) -> np.ndarray:
+    def parse_two_theta_area(self) -> np.ndarray:
         """
         Returns the values of the tthArea virtual motor during this scan.
         """
         return 90 - self.two_theta
 
     @property
-    def chi(self) -> np.ndarray:
+    def parse_chi(self) -> np.ndarray:
         """
         Returns the current chi value of the diffractometer.
         """
         return 90 - self._motors["chi"]
 
     @property
-    def pixel_size(self) -> float:
+    def parse_pixel_size(self) -> float:
         """
         All detectors on I10 have 13.5 micron pixels.
         """
         return 13.5e-6
 
     @property
-    def image_shape(self) -> Tuple[int]:
+    def parse_image_shape(self) -> Tuple[int]:
         """
         Returns the shape of detector images. This is easy in I10, since they're
         both 2048**2 square detectors.
@@ -511,7 +529,7 @@ class I10Nexus(NexusBase):
         return 2048, 2048
 
     @property
-    def raw_image_paths(self) -> List[str]:
+    def parse_raw_image_paths(self) -> List[str]:
         """
         Returns a list of paths to the .tiff images recorded during this scan.
         These are the same paths that were originally recorded during the scan,
