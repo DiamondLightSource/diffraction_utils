@@ -500,7 +500,7 @@ class I07Nexus(NexusBase):
         """
         if self.detector_name in ['excroi', 'exr']:
             return 55e-6
-        if self.detector_name in ['pilatus']:
+        if self.detector_name in [I07Nexus.pilatus]:
             return 172e-6
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
@@ -511,7 +511,7 @@ class I07Nexus(NexusBase):
         """
         if self.detector_name in ['excroi', 'exr']:
             return 515, 2069
-        if self.detector_name in ['pilatus']:
+        if self.detector_name in [I07Nexus.pilatus]:
             return 1475, 1679
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
