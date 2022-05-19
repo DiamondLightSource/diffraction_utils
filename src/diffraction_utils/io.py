@@ -195,23 +195,30 @@ class I07Nexus(NexusBase):
     This class extends NexusBase with methods useful for scraping information
     from nexus files produced at the I07 beamline at Diamond.
     """
+    # Detectors.
     excalibur_detector_2021 = "excroi"
     excalibur_04_2022 = "exr"
     pilatus = "pil2roi"
 
+    # Setups.
+    horizontal = "horizontal"
+    vertical = "vertical"
+    dcd = "DCD"
+
     def __init__(self,
                  local_path: str,
-                 is_dcd=False,
-                 stage_vertical=False,
+                 detector_distance=None,
+                 setup: str = 'horizontal',
                  diff_1=True):
         super().__init__(local_path)
+        self.detector_distance = detector_distance
         if not diff_1:
             raise NotImplementedError(
                 "Diffractometer 2 has not been implemented.")
-        if is_dcd:
+        if setup == I07Nexus.dcd:
             raise NotImplementedError(
                 "DCD nexus parsing has not been implemented.")
-        if stage_vertical:
+        if setup != I07Nexus.horizontal:
             raise NotImplementedError(
                 "Only horizontal sample stage has been implemented.")
 
@@ -412,13 +419,6 @@ class I07Nexus(NexusBase):
         to strike the sample.
         """
         return float(self.instrument.filterset.transmission)
-
-    @property
-    def detector_distance(self):
-        """
-        Returns the distance between sample and detector.
-        """
-        return float(self.instrument.diff1detdist.value)
 
     def parse_raw_image_paths(self):
         """
