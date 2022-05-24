@@ -224,6 +224,7 @@ class I07Nexus(NexusBase):
 
         # The nexusformat package is fragile, badly written and breaks in
         # parallel contexts. To get around this, some values are initialised.
+        self.detector_name = self.parse_detector_name()
         self.probe_energy = self.parse_probe_energy
         self.transmission = self.parse_transmission
         self.delta = self.parse_delta()
@@ -305,8 +306,7 @@ class I07Nexus(NexusBase):
             [self.local_path])[0]
         return file
 
-    @property
-    def detector_name(self) -> str:
+    def parse_detector_name(self) -> str:
         """
         Returns the name of the detector that we're using. Because life sucks,
         this is a function of time.
@@ -498,9 +498,9 @@ class I07Nexus(NexusBase):
         """
         Returns the side length of pixels in the detector that's being used.
         """
-        if self.detector_name in ['excroi', 'exr']:
+        if self.is_excalibur:
             return 55e-6
-        if self.detector_name in [I07Nexus.pilatus]:
+        if self.is_pilatus:
             return 172e-6
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
@@ -509,11 +509,25 @@ class I07Nexus(NexusBase):
         Returns the shape of the images we expect to be recorded by this
         detector.
         """
-        if self.detector_name in ['excroi', 'exr']:
+        if self.is_excalibur:
             return 515, 2069
-        if self.detector_name in [I07Nexus.pilatus]:
+        if self.is_pilatus:
             return 1679, 1475
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
+
+    @property
+    def is_excalibur(self) -> bool:
+        """
+        Returns whether or not we're currently using the excalibur detector.
+        """
+        return self.detector_name in ['excroi', 'exr']
+
+    @property
+    def is_pilatus(self) -> bool:
+        """
+        Returns whether or not we're currently using the pilatus detector.
+        """
+        return self.detector_name in [I07Nexus.pilatus]
 
 
 class I10Nexus(NexusBase):
