@@ -741,7 +741,7 @@ def _try_to_find_files(filenames: List[str],
                 # File found - add the correct file location to found_files
                 found_files.append(candidate_path)
                 found_file = not found_file
-                debug.log("Data file found at " + candidate_path + ".")
+                # debug.log("Data file found at " + candidate_path + ".")
                 break
 
         # If we didn't find the file, tell the user.
