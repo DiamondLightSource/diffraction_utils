@@ -198,7 +198,6 @@ class I07Nexus(NexusBase):
 
         # Parse the various i07-specific stuff.
         self.detector_distance = detector_distance
-        self.signal_regions = self._parse_signal_regions()
         self.transmission = self._parse_transmission()
         self.delta = self._parse_delta()
         self.gamma = self._parse_gamma()
@@ -206,6 +205,10 @@ class I07Nexus(NexusBase):
         self.theta = self._parse_theta()
         self.alpha = self._parse_alpha()
         self.chi = self._parse_chi()
+
+        # ROIs currently only implemented for the excalibur detector.
+        if self.is_excalibur:
+            self.signal_regions = self._parse_signal_regions()
 
     @property
     def has_image_data(self) -> bool:
