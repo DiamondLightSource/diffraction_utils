@@ -10,22 +10,23 @@ class and its children.
 # We've gotta access the _value attribute on some NXobjects.
 # pylint: disable=protected-access
 
+# Some useless super delegations are useful for quick abstractmethod overrides.
+# pylint: disable=useless-super-delegation
+
 
 import json
-import os
 from abc import abstractmethod
-from typing import List, Dict, Tuple
+from pathlib import Path
+from typing import List, Dict, Tuple, Union
 from warnings import warn
 
 
 import nexusformat.nexus.tree as nx
 import numpy as np
 from nexusformat.nexus import nxload
-from PIL import Image as PILImageModule
 
 
 from .region import Region
-from .debug import debug
 from .data_file import DataFileBase
 
 
@@ -53,42 +54,47 @@ class NexusBase(DataFileBase):
             The object produced by loading the file at file_path with nxload.
     """
 
-    def __init__(self, local_path: str):
-        super().__init__(local_path)
+    def __init__(self,
+                 local_path: Union[str, Path],  # The path to this file.
+                 local_data_path: Union[str, Path] = '',  # Path to the data.
+                 locate_local_data=True):
+
+        # Set up the nexus specific attributes.
+        # This needs to be done *before* calling super().__init__!
         self.nxfile = nxload(local_path)
+        self.nx_entry = self._parse_nx_entry()
+        self.default_nx_data_name = self._parse_default_nx_data_name()
+        self.default_nx_data = self._parse_default_nx_data()
+        self.nx_instrument = self._parse_nx_instrument()
+        self.nx_detector = self._parse_nx_detector()
 
-    @property
-    def src_path(self):
-        """
-        The name of this nexus file, as it was recorded when the nexus file was
-        written.
-        """
-        return self.nxfile.file_name
+        # Now we can call super().__init__ to run the remaining parsers.
+        super().__init__(local_path, local_data_path, locate_local_data)
 
-    @property
-    def detector(self):
+        # Finally, parse the motors.
+        self.motors = self._parse_motors()
+
+    def _parse_nx_detector(self):
         """
         Returns the NXdetector instance stored in this NexusFile.
 
         Raises:
             ValueError if more than one NXdetector is found.
         """
-        det, = self.instrument.NXdetector
+        det, = self.nx_instrument.NXdetector
         return det
 
-    @property
-    def instrument(self):
+    def _parse_nx_instrument(self):
         """
         Returns the NXinstrument instanced stored in this NexusFile.
 
         Raises:
             ValueError if more than one NXinstrument is found.
         """
-        instrument, = self.entry.NXinstrument
+        instrument, = self.nx_entry.NXinstrument
         return instrument
 
-    @property
-    def entry(self) -> nx.NXentry:
+    def _parse_nx_entry(self) -> nx.NXentry:
         """
         Returns this nexusfile's entry.
 
@@ -98,96 +104,54 @@ class NexusBase(DataFileBase):
         entry, = self.nxfile.NXentry
         return entry
 
-    @property
-    def default_signal(self) -> np.ndarray:
+    def _parse_default_signal(self) -> np.ndarray:
         """
         The numpy array of intensities pointed to by the signal attribute in the
         nexus file.
         """
-        return self.default_nxdata[self.default_signal_name].nxdata
+        return self.default_nx_data[self.default_signal_name].nxdata
 
-    @property
-    def default_axis(self) -> np.ndarray:
+    def _parse_default_axis(self) -> np.ndarray:
         """
         Returns the nxdata associated with the default axis.
         """
-        return self.default_nxdata[self.default_axis_name].nxdata
+        return self.default_nx_data[self.default_axis_name].nxdata
 
-    @property
-    def default_signal_name(self):
+    def _parse_default_signal_name(self):
         """
         Returns the name of the default signal.
         """
-        return self.default_nxdata.signal
+        return self.default_nx_data.signal
 
-    @property
-    def default_axis_name(self) -> str:
+    def _parse_default_axis_name(self) -> str:
         """
         Returns the name of the default axis.
         """
-        return self.entry[self.entry.default].axes
+        return self.nx_entry[self.nx_entry.default].axes
 
-    @property
-    def default_nxdata_name(self):
+    def _parse_default_nx_data_name(self):
         """
         Returns the name of the default nxdata.
         """
-        return self.entry.default
+        return self.nx_entry.default
 
-    @property
-    def default_nxdata(self) -> np.ndarray:
+    def _parse_default_nx_data(self) -> np.ndarray:
         """
         Returns the default NXdata.
         """
-        return self.entry[self.default_nxdata_name]
+        return self.nx_entry[self.default_nx_data_name]
 
     @abstractmethod
-    def parse_raw_image_paths(self) -> List[str]:
+    def _parse_motors(self) -> Dict[str, np.ndarray]:
         """
-        Returns a list of paths to the .tiff images recorded during this scan.
-        These are the same paths that were originally recorded during the scan,
-        so will point at some directory in the diamond filesystem.
-        """
+        Returns a dictionary taking the form:
 
-    def get_local_image_paths(self, clue: str = '') -> List[str]:
-        """
-        Returns a list of local image paths. Raises FileNotFoundError if any of
-        the images cannot be found. These local paths can be used to directly
-        load the images.
+            motor_name: motor_values
 
-        Args:
-            clue (str):
-                A hint as to where these images might be stored. A directory
-                would make life easier. If this isn't given, this method will
-                still search a large number of directories to try to find the
-                images.
-
-        Raises:
-            FileNotFoundError if any of the images cant be found.
+        where motor_values is an array containing the value of the motor with
+        name motor_name at every point in the scan (even if the motor's value
+        is unchanging).
         """
-        return _try_to_find_files(self.parse_raw_image_paths(),
-                                  [clue, self.local_path])
-
-    def load_image_arrays(self, clue: str = '', verbose=True) \
-            -> List[np.ndarray]:
-        """
-        Tries to locate the images associated with this nexus file, if there are
-        any. These images are stored as numpy arrays.
-
-        Args:
-            clue (str):
-                A hint as to where these images might be stored. A directory
-                would make life easier. If this isn't given, this method will
-                still search a large number of directories to try to find the
-                images.
-        """
-        # Do this in a loop as opposed to a comprehension so we can print.
-        arrs = []
-        for count, path in enumerate(self.get_local_image_paths(clue)):
-            arrs.append(np.array(PILImageModule.open(path)))
-            if verbose:
-                print(f"Loading image number {count}.", end='\r', flush=True)
-        return arrs
 
 
 class I07Nexus(NexusBase):
@@ -206,12 +170,22 @@ class I07Nexus(NexusBase):
     dcd = "DCD"
 
     def __init__(self,
-                 local_path: str,
+                 local_path: Union[str, Path],
+                 local_data_path: Union[str, Path] = '',
                  detector_distance=None,
                  setup: str = 'horizontal',
-                 diff_1=True):
-        super().__init__(local_path)
-        self.detector_distance = detector_distance
+                 diff_1=True,
+                 locate_local_data=True):
+        # We need to know what detector we're using before doing any further
+        # initialization.
+        self.nxfile = nxload(local_path)
+        self.nx_entry = self._parse_nx_entry()
+        self.detector_name = self._parse_detector_name()
+
+        # Now we can call super().__init__
+        super().__init__(local_path, local_data_path, locate_local_data)
+
+        # Only a subset of i07's capabilities can be handled by this library.
         if not diff_1:
             raise NotImplementedError(
                 "Diffractometer 2 has not been implemented.")
@@ -222,59 +196,89 @@ class I07Nexus(NexusBase):
             raise NotImplementedError(
                 "Only horizontal sample stage has been implemented.")
 
-        # The nexusformat package is fragile, badly written and breaks in
-        # parallel contexts. To get around this, some values are initialised.
-        self.detector_name = self.parse_detector_name()
-        self.probe_energy = self.parse_probe_energy
-        self.transmission = self.parse_transmission
-        self.delta = self.parse_delta()
-        self.gamma = self.parse_gamma()
-        self.omega = self.parse_omega()
-        self.theta = self.parse_theta()
-        self.alpha = self.parse_alpha()
-        self.chi = self.parse_chi()
-        self.image_shape = self.parse_image_shape()
-        self.pixel_size = self.parse_pixel_size()
-        self.raw_image_paths = self.parse_raw_image_paths()
-
-    def parse_delta(self) -> np.ndarray:
-        """
-        Returns a numpy array of the delta values throughout the scan.
-        """
-        return self._motors["diff1delta"]
-
-    def parse_gamma(self) -> np.ndarray:
-        """
-        Returns a numpy array of the gamma values throughout the scan.
-        """
-        return self._motors["diff1gamma"]
-
-    def parse_omega(self) -> np.ndarray:
-        """
-        Returns a numpy array of the omega values throughout the scan.
-        """
-        return self._motors["diff1omega"]
-
-    def parse_theta(self) -> np.ndarray:
-        """
-        Returns a numpy array of the theta values throughout the scan.
-        """
-        return self._motors["diff1theta"]
-
-    def parse_alpha(self) -> np.ndarray:
-        """
-        Returns a numpy array of the alpha values throughout the scan.
-        """
-        return self._motors["diff1alpha"]
-
-    def parse_chi(self) -> np.ndarray:
-        """
-        Returns a numpy array of the chi values throughout the scan.
-        """
-        return self._motors["diff1chi"]
+        # Parse the various i07-specific stuff.
+        self.detector_distance = detector_distance
+        self.signal_regions = self._parse_signal_regions()
+        self.transmission = self._parse_transmission()
+        self.delta = self._parse_delta()
+        self.gamma = self._parse_gamma()
+        self.omega = self._parse_omega()
+        self.theta = self._parse_theta()
+        self.alpha = self._parse_alpha()
+        self.chi = self._parse_chi()
 
     @property
-    def _motors(self) -> Dict[str, np.ndarray]:
+    def has_image_data(self) -> bool:
+        """
+        It would be pretty weird to not have image data on an i07 nexus file.
+        """
+        return True
+
+    @property
+    def has_hdf5_data(self) -> bool:
+        """
+        This needs to be implemented properly, as i10 scans *can* have data
+        stored in .h5 files.
+        """
+        return False
+
+    @property
+    def _hdf5_internal_data_path(self) -> str:
+        """
+        This needs to be implemented properly, as i10 scans *can* have data
+        stored in .h5 files.
+        """
+        return super()._hdf5_internal_data_path
+
+    def _parse_raw_hdf5_path(self) -> Union[str, Path]:
+        """
+        This needs to be implemented properly, as i10 scans *can* have data
+        stored in .h5 files.
+        """
+        return super()._parse_raw_hdf5_path()
+
+    def _parse_probe_energy(self):
+        """
+        Returns the energy of the probe particle parsed from this NexusFile.
+        """
+        return float(self.nx_instrument.dcm1energy.value)*1e3
+
+    def _parse_pixel_size(self) -> float:
+        """
+        Returns the side length of pixels in the detector that's being used.
+        """
+        if self.is_excalibur:
+            return 55e-6
+        if self.is_pilatus:
+            return 172e-6
+        raise ValueError(f"Detector name {self.detector_name} is unknown.")
+
+    def _parse_image_shape(self) -> float:
+        """
+        Returns the shape of the images we expect to be recorded by this
+        detector.
+        """
+        if self.is_excalibur:
+            return 515, 2069
+        if self.is_pilatus:
+            return 1679, 1475
+        raise ValueError(f"Detector name {self.detector_name} is unknown.")
+
+    def _parse_raw_image_paths(self):
+        """
+        Returns the raw path to the data file. This is useless if you aren't on
+        site, but used to guess where you've stored the data file locally.
+        """
+        if self.detector_name == I07Nexus.pilatus:
+            path_array = self.nx_detector["image_data"]._value
+        if self.detector_name in [I07Nexus.excalibur_04_2022,
+                                  I07Nexus.excalibur_detector_2021]:
+            path_array = [
+                self.nx_instrument["excalibur_h5_data/exc_path"]._value]
+
+        return [x.decode('utf-8') for x in path_array]
+
+    def _parse_motors(self) -> Dict[str, np.ndarray]:
         """
         A dictionary of all of the motor positions. This is only useful if you
         know some diffractometer specific keys, so it's kept private to
@@ -286,61 +290,69 @@ class I07Nexus(NexusBase):
             "diff1theta", "diff1chi", "diff1alpha"]
 
         motors_dict = {
-            x: np.ones(self.scan_length)*self.instrument[x].value._value
+            x: np.ones(self.scan_length)*self.nx_instrument[x].value._value
             for x in instr_motor_names}
 
         return motors_dict
 
-    @property
-    def local_data_path(self) -> str:
+    def _parse_transmission(self):
         """
-        The local path to the data (.h5) file. Note that this isn't in the
-        NexusBase class because it need not be reasonably expected to point at a
-        .h5 file.
-
-        Raises:
-            FileNotFoundError if the data file cant be found.
+        Proportional to the fraction of probe particles allowed by an attenuator
+        to strike the sample.
         """
-        file = _try_to_find_files(
-            [self.parse_raw_image_paths()],
-            [self.local_path])[0]
-        return file
+        return float(self.nx_instrument.filterset.transmission)
 
-    def parse_detector_name(self) -> str:
+    def _parse_delta(self) -> np.ndarray:
+        """
+        Returns a numpy array of the delta values throughout the scan.
+        """
+        return self.motors["diff1delta"]
+
+    def _parse_gamma(self) -> np.ndarray:
+        """
+        Returns a numpy array of the gamma values throughout the scan.
+        """
+        return self.motors["diff1gamma"]
+
+    def _parse_omega(self) -> np.ndarray:
+        """
+        Returns a numpy array of the omega values throughout the scan.
+        """
+        return self.motors["diff1omega"]
+
+    def _parse_theta(self) -> np.ndarray:
+        """
+        Returns a numpy array of the theta values throughout the scan.
+        """
+        return self.motors["diff1theta"]
+
+    def _parse_alpha(self) -> np.ndarray:
+        """
+        Returns a numpy array of the alpha values throughout the scan.
+        """
+        return self.motors["diff1alpha"]
+
+    def _parse_chi(self) -> np.ndarray:
+        """
+        Returns a numpy array of the chi values throughout the scan.
+        """
+        return self.motors["diff1chi"]
+
+    def _parse_detector_name(self) -> str:
         """
         Returns the name of the detector that we're using. Because life sucks,
         this is a function of time.
         """
-        if "excroi" in self.entry:
+        if "excroi" in self.nx_entry:
             return I07Nexus.excalibur_detector_2021
-        if "exr" in self.entry:
+        if "exr" in self.nx_entry:
             return I07Nexus.excalibur_04_2022
-        if 'pil2roi' in self.entry:
+        if 'pil2roi' in self.nx_entry:
             return I07Nexus.pilatus
         # Couldn't recognise the detector.
         raise NotImplementedError()
 
-    def _get_ith_region(self, i: int):
-        """
-        Returns the ith region of interest found in the .nxs file.
-
-        Args:
-            i:
-                The region of interest number to return. This number should
-                match the ROI name as found in the .nxs file (generally not 0
-                indexed).
-
-        Returns:
-            The ith region of interest found in the .nxs file.
-        """
-        x_1 = self.detector[self._get_region_bounds_key(i, 'x_1')][0]
-        x_2 = self.detector[self._get_region_bounds_key(i, 'Width')][0] + x_1
-        y_1 = self.detector[self._get_region_bounds_key(i, 'y_1')][0]
-        y_2 = self.detector[self._get_region_bounds_key(i, 'Height')][0] + y_1
-        return Region(x_1, x_2, y_1, y_2)
-
-    @property
-    def signal_regions(self) -> List[Region]:
+    def _parse_signal_regions(self) -> List[Region]:
         """
         Returns a list of region objects that define the location of the signal.
         Currently there is nothing better to do than assume that this is a list
@@ -351,11 +363,10 @@ class I07Nexus(NexusBase):
         if self.detector_name == I07Nexus.excalibur_04_2022:
             # Make sure our code executes for bytes and strings.
             try:
-                json_str = self.instrument[
+                json_str = self.nx_instrument[
                     "ex_rois/excalibur_ROIs"]._value.decode("utf-8")
             except AttributeError:
-                json_str = self.instrument[
-                    "ex_rois/excalibur_ROIs"]._value
+                json_str = self.nx_instrument["ex_rois/excalibur_ROIs"]._value
             # This is badly formatted and cant be loaded by the json lib. We
             # need to make a series of modifications.
             json_str = json_str.replace('u', '')
@@ -371,6 +382,27 @@ class I07Nexus(NexusBase):
 
         raise NotImplementedError()
 
+    def _get_ith_region(self, i: int):
+        """
+        Returns the ith region of interest found in the .nxs file.
+
+        Args:
+            i:
+                The region of interest number to return. This number should
+                match the ROI name as found in the .nxs file (generally not 0
+                indexed).
+
+        Returns:
+            The ith region of interest found in the .nxs file.
+        """
+        x_1 = self.nx_detector[self._get_region_bounds_key(i, 'x_1')][0]
+        x_2 = self.nx_detector[self._get_region_bounds_key(
+            i, 'Width')][0] + x_1
+        y_1 = self.nx_detector[self._get_region_bounds_key(i, 'y_1')][0]
+        y_2 = self.nx_detector[self._get_region_bounds_key(
+            i, 'Height')][0] + y_1
+        return Region(x_1, x_2, y_1, y_2)
+
     @property
     def background_regions(self) -> List[Region]:
         """
@@ -384,10 +416,10 @@ class I07Nexus(NexusBase):
         if self.detector_name == I07Nexus.excalibur_04_2022:
             # Make sure our code executes for bytes and strings.
             try:
-                json_str = self.instrument[
+                json_str = self.nx_instrument[
                     "ex_rois/excalibur_ROIs"]._value.decode("utf-8")
             except AttributeError:
-                json_str = self.instrument[
+                json_str = self.nx_instrument[
                     "ex_rois/excalibur_ROIs"]._value
             # This is badly formatted and cant be loaded by the json lib. We
             # need to make a series of modifications.
@@ -406,46 +438,13 @@ class I07Nexus(NexusBase):
         raise NotImplementedError()
 
     @property
-    def parse_probe_energy(self):
-        """
-        Returns the energy of the probe particle parsed from this NexusFile.
-        """
-        return float(self.instrument.dcm1energy.value)*1e3
-
-    @property
-    def parse_transmission(self):
-        """
-        Proportional to the fraction of probe particles allowed by an attenuator
-        to strike the sample.
-        """
-        return float(self.instrument.filterset.transmission)
-
-    def parse_raw_image_paths(self):
-        """
-        Returns the raw path to the data file. This is useless if you aren't on
-        site, but used to guess where you've stored the data file locally.
-        """
-        # This is far from ideal; there currently seems to be no standard way
-        # to refer to point at information stored outside of the nexus file.
-        # If you're a human, it's easy enough to find, but with code this is
-        # a pretty rubbish task. Here I assume that data files are stored in
-        # a specific location. This is probably fragile.
-
-        if self.detector_name == I07Nexus.pilatus:
-            path_array = self.detector["image_data"]._value
-        if self.detector_name in [I07Nexus.excalibur_04_2022,
-                                  I07Nexus.excalibur_detector_2021]:
-            path_array = [self.instrument["excalibur_h5_data/exc_path"]._value]
-
-        return [x.decode('utf-8') for x in path_array]
-
-    @property
     def _region_keys(self) -> List[str]:
         """
         Parses all of the detector's dictionary keys and returns all keys
         relating to regions of interest.
         """
-        return [key for key in self.detector.keys() if key.startswith("Region")]
+        return [key for key in self.nx_detector.keys()
+                if key.startswith("Region")]
 
     @property
     def _number_of_regions(self) -> int:
@@ -494,27 +493,6 @@ class I07Nexus(NexusBase):
 
         return f"Region_{region_no}_{insert}"
 
-    def parse_pixel_size(self) -> float:
-        """
-        Returns the side length of pixels in the detector that's being used.
-        """
-        if self.is_excalibur:
-            return 55e-6
-        if self.is_pilatus:
-            return 172e-6
-        raise ValueError(f"Detector name {self.detector_name} is unknown.")
-
-    def parse_image_shape(self) -> float:
-        """
-        Returns the shape of the images we expect to be recorded by this
-        detector.
-        """
-        if self.is_excalibur:
-            return 515, 2069
-        if self.is_pilatus:
-            return 1679, 1475
-        raise ValueError(f"Detector name {self.detector_name} is unknown.")
-
     @property
     def is_excalibur(self) -> bool:
         """
@@ -539,38 +517,75 @@ class I10Nexus(NexusBase):
     # We might need to check which instrument we're using at some point.
     rasor_instrument = "rasor"
 
-    def __init__(self, local_path: str, detector_distance: float = None):
-        super().__init__(local_path)
-        self.detector_distance = detector_distance
+    def __init__(self,
+                 local_path: Union[str, Path],
+                 local_data_path: Union[str, Path] = '',
+                 detector_distance: float = None,
+                 locate_local_data: bool = True):
+        super().__init__(local_path, local_data_path, locate_local_data)
 
         # Warn the user if detector distance hasn't been set.
-        if self.detector_distance is None:
+        if detector_distance is None:
             warn(MissingMetadataWarning(
                 "Detector distance has not been set. At I10, sample-detector "
                 "distance is not recorded in the nexus file, and must be "
                 "input manually when using this library if it is needed."))
 
-        # The nexusformat package is fragile, badly written and breaks in
-        # parallel contexts. To get around this, some values are initialised.
-        self.probe_energy = self.parse_probe_energy
-        self.theta = self.parse_theta
-        self.theta_area = self.parse_theta_area
-        self.two_theta = self.parse_two_theta
-        self.two_theta_area = self.parse_two_theta_area
-        self.chi = self.parse_chi
-        self.image_shape = self.parse_image_shape
-        self.pixel_size = self.parse_pixel_size
-        self.raw_image_paths = self.parse_raw_image_paths()
+        # Initialize the i10 specific stuff.
+        self.detector_distance = detector_distance
+        self.theta = self._parse_theta()
+        self.theta_area = self._parse_theta_area()
+        self.two_theta = self._parse_two_theta()
+        self.two_theta_area = self._parse_two_theta_area()
+        self.chi = self._parse_chi()
 
     @property
-    def parse_probe_energy(self):
+    def has_image_data(self) -> bool:
+        """For now, assume all i10 data we're given is image data."""
+        return True
+
+    @property
+    def has_hdf5_data(self) -> bool:
+        """As of 31/05/2022, i10 does not output hdf5 data, only .tiffs."""
+        return False
+
+    @property
+    def _hdf5_internal_data_path(self) -> str:
+        """Trivially raises, but we need to implement the abstractmethod"""
+        return super()._hdf5_internal_data_path
+
+    def _parse_raw_hdf5_path(self) -> Union[str, Path]:
+        """Trivially raises, but we need to implement the abstractmethod"""
+        return super()._parse_raw_hdf5_path()
+
+    def _parse_raw_image_paths(self) -> List[str]:
+        """
+        Returns a list of paths to the .tiff images recorded during this scan.
+        These are the same paths that were originally recorded during the scan,
+        so will point at some directory in the diamond filesystem.
+        """
+        return [x.decode('utf-8') for x in self.default_signal]
+
+    def _parse_probe_energy(self):
         """
         Returns the energy of the probe particle parsed from this NexusFile.
         """
-        return float(self.instrument.pgm.energy)
+        return float(self.nx_instrument.pgm.energy)
 
-    @property
-    def _motors(self) -> Dict[str, np.ndarray]:
+    def _parse_pixel_size(self) -> float:
+        """
+        All detectors on I10 have 13.5 micron pixels.
+        """
+        return 13.5e-6
+
+    def _parse_image_shape(self) -> Tuple[int]:
+        """
+        Returns the shape of detector images. This is easy in I10, since they're
+        both 2048**2 square detectors.
+        """
+        return 2048, 2048
+
+    def _parse_motors(self) -> Dict[str, np.ndarray]:
         """
         A dictionary of all of the motor positions. This is only useful if you
         know some diffractometer specific keys, so it's kept private to
@@ -581,174 +596,45 @@ class I10Nexus(NexusBase):
         diff_motor_names = ["theta", "2_theta", "chi"]
 
         motors_dict = {
-            x: np.ones(self.scan_length)*self.instrument.rasor.diff[y]._value
+            x: np.ones(self.scan_length) *
+            self.nx_instrument.rasor.diff[y]._value
             for x, y in zip(instr_motor_names, diff_motor_names)}
 
         for name in instr_motor_names:
             try:
-                motors_dict[name] = self.instrument[name].value._value
+                motors_dict[name] = self.nx_instrument[name].value._value
             except KeyError:
                 pass
         return motors_dict
 
-    @property
-    def parse_theta(self) -> np.ndarray:
+    def _parse_theta(self) -> np.ndarray:
         """
         Returns the current theta value of the diffractometer, as parsed from
         the nexus file. Note that this will be different to thArea in GDA.
         """
-        return self._motors["th"]
+        return self.motors["th"]
 
-    @property
-    def parse_two_theta(self) -> np.ndarray:
+    def _parse_two_theta(self) -> np.ndarray:
         """
         Returns the current two-theta value of the diffractometer, as parsed
         from the nexus file. Note that this will be different to tthArea in GDA.
         """
-        return self._motors["tth"]
+        return self.motors["tth"]
 
-    @property
-    def parse_theta_area(self) -> np.ndarray:
+    def _parse_theta_area(self) -> np.ndarray:
         """
         Returns the values of the thArea virtual motor during this scan.
         """
         return 180 - self.theta
 
-    @property
-    def parse_two_theta_area(self) -> np.ndarray:
+    def _parse_two_theta_area(self) -> np.ndarray:
         """
         Returns the values of the tthArea virtual motor during this scan.
         """
         return 90 - self.two_theta
 
-    @property
-    def parse_chi(self) -> np.ndarray:
+    def _parse_chi(self) -> np.ndarray:
         """
         Returns the current chi value of the diffractometer.
         """
-        return 90 - self._motors["chi"]
-
-    @property
-    def parse_pixel_size(self) -> float:
-        """
-        All detectors on I10 have 13.5 micron pixels.
-        """
-        return 13.5e-6
-
-    @property
-    def parse_image_shape(self) -> Tuple[int]:
-        """
-        Returns the shape of detector images. This is easy in I10, since they're
-        both 2048**2 square detectors.
-        """
-        return 2048, 2048
-
-    def parse_raw_image_paths(self) -> List[str]:
-        """
-        Returns a list of paths to the .tiff images recorded during this scan.
-        These are the same paths that were originally recorded during the scan,
-        so will point at some directory in the diamond filesystem.
-        """
-        return [x.decode('utf-8') for x in self.default_signal]
-
-    def load_image_array(self, index: int, clue: str = '') -> List[np.ndarray]:
-        """
-        Tries to locate an image associated with this nexus file. If the image
-        is found, it is loaded as a numpy array and returned.
-
-        Args:
-            index (int):
-                The index of the image array in the get_local_image_paths list.
-            clue (str):
-                A hint as to where these images might be stored. A directory
-                would make life easier. If this isn't given, this method will
-                still search a large number of directories to try to find the
-                images.
-        """
-        path = self.get_local_image_paths(clue)[index]
-        return np.array(PILImageModule.open(path))
-
-
-def _try_to_find_files(filenames: List[str],
-                       additional_search_paths: List[str]):
-    """
-    Check that data files exist if the file parsed by parser pointed to a
-    separate file containing intensity information. If the intensity data
-    file could not be found in its original location, check a series of
-    probable locations for the data file. If the data file is found in one
-    of these locations, update file's entry in self.data.
-
-    Returns:
-        :py:attr:`list` of :py:attr:`str`:
-            List of the corrected, actual paths to the files.
-    """
-    found_files = []
-
-    # If we had only one file, make a list out of it.
-    if not hasattr(filenames, "__iter__"):
-        filenames = [filenames]
-
-    cwd = os.getcwd()
-    start_dirs = [
-        cwd,  # maybe file is stored near the current working dir
-        # To search additional directories, add them in here manually.
-    ]
-    start_dirs.extend(additional_search_paths)
-
-    local_start_directories = [x.replace('\\', '/') for x in start_dirs]
-    num_start_directories = len(local_start_directories)
-
-    # Now extend the additional search paths.
-    for i in range(num_start_directories):
-        search_path = local_start_directories[i]
-        split_srch_path = search_path.split('/')
-        for j in range(len(split_srch_path)):
-            extra_path_list = split_srch_path[:-(j+1)]
-            extra_path = '/'.join(extra_path_list)
-            local_start_directories.append(extra_path)
-
-    # This line allows for a loading bar to show as we check the file.
-    for i, _ in enumerate(filenames):
-        # Better to be safe... Note: windows is happy with / even though it
-        # defaults to \
-        filenames[i] = str(filenames[i]).replace('\\', '/')
-
-        # Maybe we can see the file in its original storage location?
-        if os.path.isfile(filenames[i]):
-            found_files.append(filenames[i])
-            continue
-
-        # If not, maybe it's stored locally? If the file was stored at
-        # location /a1/a2/.../aN/file originally, for a local directory LD,
-        # check locations LD/aj/aj+1/.../aN for all j<N and all LD's of
-        # interest. This algorithm is a generalization of Andrew McCluskey's
-        # original approach.
-
-        # now generate a list of all directories that we'd like to check
-        candidate_paths = []
-        split_file_path = str(filenames[i]).split('/')
-        for j in range(len(split_file_path)):
-            local_guess = '/'.join(split_file_path[j:])
-            for start_dir in local_start_directories:
-                candidate_paths.append(
-                    os.path.join(start_dir, local_guess))
-
-        # Iterate over each of the candidate paths to see if any of them contain
-        # the data file we're looking for.
-        found_file = False
-        for candidate_path in candidate_paths:
-            if os.path.isfile(candidate_path):
-                # File found - add the correct file location to found_files
-                found_files.append(candidate_path)
-                found_file = not found_file
-                # debug.log("Data file found at " + candidate_path + ".")
-                break
-
-        # If we didn't find the file, tell the user.
-        if not found_file:
-            raise FileNotFoundError(
-                "The data file with the name " + filenames[i] + " could "
-                "not be found. The following paths were searched:\n" +
-                "\n".join(candidate_paths)
-            )
-    return found_files
+        return 90 - self.motors["chi"]

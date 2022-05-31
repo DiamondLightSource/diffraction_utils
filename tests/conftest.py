@@ -5,6 +5,9 @@ The pytest conftest file.
 # Always necessary in conftest files.
 # pylint: disable=redefined-outer-name
 
+# pylint, as usual, doesn't like my scientific data file names. :(
+# pylint: disable=invalid-name
+
 import os
 
 from pytest import fixture
@@ -58,11 +61,11 @@ def path_to_i10_data():
 
 
 @fixture
-def rasor(path_to_2022_i10_nxs):
+def rasor(path_to_2022_i10_nxs, path_to_i10_data):
     """
     Returns an instance of I10RasorDiffractometer.
     """
-    nexus = I10Nexus(path_to_2022_i10_nxs,
+    nexus = I10Nexus(path_to_2022_i10_nxs, path_to_i10_data,
                      detector_distance=0.5)  # 50 cm detector distance.
     return I10RasorDiffractometer(nexus, [0, 1, 0],
                                   I10RasorDiffractometer.area_detector)
@@ -83,8 +86,8 @@ def soller_test_diffractometer(path_to_i07_soller_test_nxs):
     Returns the I07Diffractometer instance corresponding to the data file
     stored in path_to_i07_soller_test_nxs.
     """
-    return I07Diffractometer(path_to_i07_soller_test_nxs, [0, 1, 0],
-                             I07Diffractometer.horizontal)
+    nexus = I07Nexus(path_to_i07_soller_test_nxs, path_to_i07_soller_test_nxs)
+    return I07Diffractometer(nexus, [0, 1, 0], I07Diffractometer.horizontal)
 
 
 @fixture
@@ -93,7 +96,7 @@ def i07_04_2022_i07Nexus(path_to_04_2022_i07_nxs):
     Returns the I07Nexus object corresponding to the nexus file stored in
     path_to_04_2022_i07_nxs.
     """
-    return I07Nexus(path_to_04_2022_i07_nxs)
+    return I07Nexus(path_to_04_2022_i07_nxs, locate_local_data=False)
 
 
 @fixture
