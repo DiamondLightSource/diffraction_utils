@@ -68,6 +68,7 @@ class DataFileBase(ABC):
             # Image data is either all stored in 1 big hdf5 file, or as separate
             # images.
             if self.has_hdf5_data:
+                self.hdf5_internal_path = self._parse_hdf5_internal_path()
                 self.raw_hdf5_path = self._parse_raw_hdf5_path()
                 if locate_local_data:
                     self.local_hdf5_path = self._parse_local_hdf5_path()
@@ -138,9 +139,8 @@ class DataFileBase(ABC):
         """
         return len(self.default_axis)
 
-    @property
     @abstractmethod
-    def _hdf5_internal_data_path(self) -> str:
+    def _parse_hdf5_internal_path(self) -> str:
         """
         Returns the internal data path to hdf5 data, if instances of this data
         file have hdf5 data. If not, raises NoHdf5Error.
@@ -182,7 +182,7 @@ class DataFileBase(ABC):
         if self.has_hdf5_data:
             # If this is hdf5 data, open the file and grab the correct image.
             with h5py.File(self.local_hdf5_path, "r") as open_file:
-                dataset = open_file[self._hdf5_internal_data_path][()]
+                dataset = open_file[self.hdf5_internal_path][()]
                 return np.array(dataset[image_number])
         else:
             # If these are separately stored images, grab the correct path from
