@@ -182,8 +182,9 @@ class DataFileBase(ABC):
         if self.has_hdf5_data:
             # If this is hdf5 data, open the file and grab the correct image.
             with h5py.File(self.local_hdf5_path, "r") as open_file:
-                dataset = open_file[self.hdf5_internal_path][()]
-                return np.array(dataset[image_number])
+                dataset = open_file[self.hdf5_internal_path]
+                img_arr = np.array(dataset[image_number])
+                return img_arr
         else:
             # If these are separately stored images, grab the correct path from
             # local_image_paths and load that specific image.
@@ -219,8 +220,13 @@ class DataFileBase(ABC):
         if not self.has_hdf5_data:
             raise NoHdf5Error()
 
-        return _try_to_find_files([self.raw_hdf5_path],
-                                  [self.local_data_path, self.local_path])
+        # Note that _try_to_find_files always returns a list of found files.
+        # In this case, we expect to find only one h5 file containing all of
+        # the images. This syntax not only looks cool, but handily raises if
+        # we found more than one hdf5 file with that name.
+        hdf5_file, = _try_to_find_files(
+            [self.raw_hdf5_path], [self.local_data_path, self.local_path])
+        return hdf5_file
 
     @abstractmethod
     def _parse_raw_image_paths(self) -> List[str]:

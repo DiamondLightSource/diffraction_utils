@@ -76,7 +76,9 @@ class NexusBase(DataFileBase):
 
     def _parse_nx_detector(self):
         """
-        Returns the NXdetector instance stored in this NexusFile.
+        Returns the NXdetector instance stored in this NexusFile. This will
+        need to be overridden for beamlines that put more than 1 NXdetector in
+        a nexus file.
 
         Raises:
             ValueError if more than one NXdetector is found.
@@ -162,7 +164,8 @@ class I07Nexus(NexusBase):
     # Detectors.
     excalibur_detector_2021 = "excroi"
     excalibur_04_2022 = "exr"
-    pilatus = "pil2roi"
+    pilatus_2021 = "pil2roi"
+    pilatus_2022 = "PILATUS"
 
     # Setups.
     horizontal = "horizontal"
@@ -220,25 +223,34 @@ class I07Nexus(NexusBase):
     @property
     def has_hdf5_data(self) -> bool:
         """
-        This needs to be implemented properly, as i10 scans *can* have data
-        stored in .h5 files.
+        Currently seems like a reasonable way of determining this.
         """
+        # If something goes seriously wrong while checking if the file has hdf5
+        # data, it probably doesn't! So, we use a broad except in this case.
+        # pylint: disable=broad-except
+        try:
+            # Try to see if our detector's data points at an h5 file.
+            if isinstance(self.nx_detector["data"], nx.NXlink):
+                if self.nx_detector["data"]._filename.endswith('.h5'):
+                    return True
+        except Exception:
+            # If something went really wrong, there mustn't be .h5 data.
+            return False
         return False
 
-    @property
-    def _hdf5_internal_data_path(self) -> str:
+    def _parse_hdf5_internal_path(self) -> str:
         """
-        This needs to be implemented properly, as i10 scans *can* have data
+        This needs to be implemented properly, as i07 scans *can* have data
         stored in .h5 files.
         """
-        return super()._hdf5_internal_data_path
+        return self.nx_detector["data"]._target
 
     def _parse_raw_hdf5_path(self) -> Union[str, Path]:
         """
-        This needs to be implemented properly, as i10 scans *can* have data
+        This needs to be implemented properly, as i07 scans *can* have data
         stored in .h5 files.
         """
-        return super()._parse_raw_hdf5_path()
+        return self.nx_detector["data"]._filename
 
     def _parse_probe_energy(self):
         """
@@ -272,14 +284,22 @@ class I07Nexus(NexusBase):
         Returns the raw path to the data file. This is useless if you aren't on
         site, but used to guess where you've stored the data file locally.
         """
-        if self.detector_name == I07Nexus.pilatus:
+        if self.is_pilatus:
             path_array = self.nx_detector["image_data"]._value
-        if self.detector_name in [I07Nexus.excalibur_04_2022,
-                                  I07Nexus.excalibur_detector_2021]:
+        if self.is_excalibur:
             path_array = [
                 self.nx_instrument["excalibur_h5_data/exc_path"]._value]
 
         return [x.decode('utf-8') for x in path_array]
+
+    def _parse_nx_detector(self):
+        """
+        This override is necessary because some i07 .nxs files have multiple
+        NXdetectors in their nexus files. What we really want is the appropriate
+        camera, which we can parse exploiting the fact that we work out what
+        the detector name is elsewhere.
+        """
+        return self.nx_instrument[self.detector_name]
 
     def _parse_motors(self) -> Dict[str, np.ndarray]:
         """
@@ -288,13 +308,20 @@ class I07Nexus(NexusBase):
         encourage users to directly access the cleaner theta, two_theta etc.
         properties.
         """
-        instr_motor_names = [
-            "diff1delta", "diff1gamma", "diff1omega",
-            "diff1theta", "diff1chi", "diff1alpha"]
+        instr_motor_names = ["diff1delta", "diff1gamma", "diff1omega",
+                             "diff1theta", "diff1alpha", "diff1chi"]
 
-        motors_dict = {
-            x: np.ones(self.scan_length)*self.nx_instrument[x].value._value
-            for x in instr_motor_names}
+        motors_dict = {}
+        ones = np.ones(self.scan_length)
+        for name in instr_motor_names:
+            # This could be a link to the data, a single value or a numpy array
+            # containing varying values. We need to handle all three cases. The
+            # last two cases are handled by multiplying by an array of ones.
+            if "value" in dir(self.nx_instrument[name]):
+                motors_dict[name] = self.nx_instrument[name].value._value*ones
+            if "value_set" in dir(self.nx_instrument[name]):
+                motors_dict[name] = \
+                    self.nx_instrument[name].value_set.nxlink._value
 
         return motors_dict
 
@@ -350,10 +377,13 @@ class I07Nexus(NexusBase):
             return I07Nexus.excalibur_detector_2021
         if "exr" in self.nx_entry:
             return I07Nexus.excalibur_04_2022
-        if 'pil2roi' in self.nx_entry:
-            return I07Nexus.pilatus
+        if "pil2roi" in self.nx_entry:
+            return I07Nexus.pilatus_2021
+        if "PILATUS" in self.nx_entry:
+            return I07Nexus.pilatus_2022
+
         # Couldn't recognise the detector.
-        raise NotImplementedError()
+        raise NotImplementedError("Couldn't recognise detector name.")
 
     def _parse_signal_regions(self) -> List[Region]:
         """
@@ -508,7 +538,8 @@ class I07Nexus(NexusBase):
         """
         Returns whether or not we're currently using the pilatus detector.
         """
-        return self.detector_name in [I07Nexus.pilatus]
+        return self.detector_name in [I07Nexus.pilatus_2021,
+                                      I07Nexus.pilatus_2022]
 
 
 class I10Nexus(NexusBase):
@@ -552,10 +583,9 @@ class I10Nexus(NexusBase):
         """As of 31/05/2022, i10 does not output hdf5 data, only .tiffs."""
         return False
 
-    @property
-    def _hdf5_internal_data_path(self) -> str:
+    def _parse_hdf5_internal_path(self) -> str:
         """Trivially raises, but we need to implement the abstractmethod"""
-        return super()._hdf5_internal_data_path
+        return super()._parse_hdf5_internal_path()
 
     def _parse_raw_hdf5_path(self) -> Union[str, Path]:
         """Trivially raises, but we need to implement the abstractmethod"""
