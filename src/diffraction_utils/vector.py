@@ -46,17 +46,20 @@ class Vector3:
         """
         return self.array/np.linalg.norm(self.array)
 
-    def to_frame(self, frame: 'Frame', diffractometer: 'DiffractometerBase'):
+    def to_frame(self, frame: 'Frame',
+                 diffractometer: 'DiffractometerBase' = None):
         """
         Transforms to a frame with name `frame`.
 
         Args:
             frame:
                 The name of the frame of reference to transform to.
-            detector:
+            diffractometer:
                 The diffractometer we should use to carry out the
                 transformation.
         """
+        if diffractometer is None:
+            diffractometer = frame.diffractometer
         diffractometer.rotate_vector_to_frame(self, frame)
 
     @classmethod
