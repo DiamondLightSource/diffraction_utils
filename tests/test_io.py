@@ -64,7 +64,8 @@ def test_excalibur_name():
     """
     assert I07Nexus.excalibur_detector_2021 == "excroi"
     assert I07Nexus.excalibur_04_2022 == "exr"
-    assert I07Nexus.pilatus == "pil2roi"
+    assert I07Nexus.pilatus_2021 == "pil2roi"
+    assert I07Nexus.pilatus_2022 == "PILATUS"
 
 
 def test_attributes_i07_04_2022(path_to_04_2022_i07_nxs: str):
