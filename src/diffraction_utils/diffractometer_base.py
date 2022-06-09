@@ -42,6 +42,79 @@ class DiffractometerBase(ABC):
             towards the detector.
         """
 
+    def get_detector_rotation(self, frame: Frame) -> Rotation:
+        """
+        Returns an instance of Rotation that, when applied, maps the [0, 0, 1]
+        vector to a vector that points at the detector's point of normal
+        incidence in the lab frame.
+        """
+        # Work out what rotation has been applied to our detector.
+        lab_frame = Frame(Frame.lab, frame.diffractometer, frame.scan_index)
+        detector_vec_lab = self.get_detector_vector(lab_frame)
+        unrotated_detector_lab = Vector3([0, 0, 1], lab_frame)
+        rot = rot_from_a_to_b(unrotated_detector_lab, detector_vec_lab)
+
+        # And finally, return it.
+        return rot
+
+    def get_detector_vertical(self, frame: Frame) -> Vector3:
+        """
+        Returns a unit vector that points vertically upwards on the detector.
+        This is normal to the output of get_detector_vector and
+        get_detector_horizontal. If all diffractometer motors are zeroed, this
+        is parallel to the y-axis.
+
+        Args:
+            frame (Frame):
+                An instance of Frame describing the frame in which we want a
+                unit vector that points vertically upwards along the detector.
+
+        Returns:
+            An instance of Vector3 corresponding to a unit vector that points
+            vertically upwards on the surface of the detector (parallel to the
+            detector's slow axis).
+        """
+        rot = self.get_detector_rotation(frame)
+        lab_frame = Frame(Frame.lab, frame.diffractometer, frame.scan_index)
+
+        # Apply this to the y-axis in the lab frame to get the detector vertical
+        # in the lab frame.
+        detector_vert_lab_arr = rot.apply(np.array([0, 1, 0]))
+        detector_vertical = Vector3(detector_vert_lab_arr, lab_frame)
+
+        # Now put this in the correct frame of reference and return it.
+        detector_vertical.to_frame(frame)
+        return detector_vertical
+
+    def get_detector_horizontal(self, frame: Frame) -> Vector3:
+        """
+        Returns a unit vector that points horizontally across the detector.
+        This is normal to the output of get_detector_vector and
+        get_detector_vertical. If all diffractometer motors are zeroed, this
+        is parallel to the x-axis.
+
+        Args:
+            frame (Frame):
+                An instance of Frame describing the frame in which we want a
+                unit vector that points horizontally across the detector.
+
+        Returns:
+            An instance of Vector3 corresponding to a unit vector that points
+            horizontally across the detector (parallel to the detector's fast
+            axis).
+        """
+        rot = self.get_detector_rotation(frame)
+        lab_frame = Frame(Frame.lab, frame.diffractometer, frame.scan_index)
+
+        # Apply this to the y-axis in the lab frame to get the detector vertical
+        # in the lab frame.
+        detector_horiz_lab_arr = rot.apply(np.array([1, 0, 0]))
+        detector_horizontal = Vector3(detector_horiz_lab_arr, lab_frame)
+
+        # Now put this in the correct frame of reference and return it.
+        detector_horizontal.to_frame(frame)
+        return detector_horizontal
+
     def get_incident_beam(self, frame: Frame) -> Vector3:
         """
         Returns a unit vector that points in the direction of the incident beam
