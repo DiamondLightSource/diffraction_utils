@@ -23,7 +23,7 @@ def test_u_matrix_horizontal(i07_04_2022_diffractometer: I07Diffractometer):
     chi = 0.45  # Note that theta and alpha were zeroed throughout scan.
     chi_axis = np.array([1, 0, 0])  # Chi acts about [-1, 0, 0]!
 
-    inverse_chi_rot = Rotation.from_rotvec(chi*chi_axis, degrees=True)
+    inverse_chi_rot = Rotation.from_rotvec(-chi*chi_axis, degrees=True)
 
     random_vec = np.random.random(3)
 
