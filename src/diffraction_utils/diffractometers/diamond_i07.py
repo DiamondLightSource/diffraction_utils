@@ -61,8 +61,8 @@ class I07Diffractometer(DiffractometerBase):
         theta_rot = Rotation.from_rotvec(theta_axis*theta, degrees=True)
 
         # Alpha acts after chi, which acts after theta. So, apply rotations
-        # in the correct order and take the inverse to get the U matrix:
-        return (alpha_rot*chi_rot*theta_rot).inv()
+        # in the correct order to get the U matrix:
+        return alpha_rot*chi_rot*theta_rot
 
     def get_detector_vector(self, frame: Frame) -> Vector3:
        # The following are the axis in the lab frame when all motors are @0.
