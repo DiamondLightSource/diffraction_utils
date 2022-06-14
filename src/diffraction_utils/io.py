@@ -24,6 +24,7 @@ from warnings import warn
 import nexusformat.nexus.tree as nx
 import numpy as np
 from nexusformat.nexus import nxload
+from scipy.spatial.transform import Rotation
 
 
 from .region import Region
@@ -208,6 +209,9 @@ class I07Nexus(NexusBase):
         self.theta = self._parse_theta()
         self.alpha = self._parse_alpha()
         self.chi = self._parse_chi()
+
+        # Get the UB matrix, if it has been stored.
+        self.ub_rot = self._parse_ub()
 
         # ROIs currently only implemented for the excalibur detector.
         if self.is_excalibur:
@@ -540,6 +544,18 @@ class I07Nexus(NexusBase):
         """
         return self.detector_name in [I07Nexus.pilatus_2021,
                                       I07Nexus.pilatus_2022]
+
+    def _parse_ub(self) -> Rotation:
+        """
+        Parses the UB matrix from a .nxs file, if it has been stored. If it
+        hasn't, returns None.
+        """
+        if self.detector_name == self.pilatus_2022:
+            matrix = self.nx_instrument["diffcalchdr.diffcalc_ub"].value.nxdata
+            return Rotation.from_matrix(matrix)
+
+        # This quantity has only been determined for pilatus_2022 .nxs files.
+        return None
 
 
 class I10Nexus(NexusBase):
