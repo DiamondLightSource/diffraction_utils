@@ -353,17 +353,14 @@ class I07Nexus(NexusBase):
             # containing varying values. We need to handle all three cases. The
             # last two cases are handled by multiplying by an array of ones.
 
-            # # Nobody should ever have to deal with this subhuman dogshit.
-            # if self.detector_name == I07Nexus.excalibur_2022_fscan:
-            #     motors_dict[name] = self.nx_entry[
-            #         I07Nexus.excalibur_2022_fscan][name].nxlink._value
-            #     continue
-
             if "value" in dir(self.nx_instrument[name]):
                 motors_dict[name] = self.nx_instrument[name].value._value*ones
             if "value_set" in dir(self.nx_instrument[name]):
                 motors_dict[name] = \
                     self.nx_instrument[name].value_set.nxlink._value
+                if motors_dict[name] is None:
+                    motors_dict[name] = \
+                        self.nx_instrument[name].value_set.nxlink.nxdata
 
         return motors_dict
 
