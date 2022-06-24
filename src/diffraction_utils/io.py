@@ -599,7 +599,8 @@ class I07Nexus(NexusBase):
         hasn't, returns None.
         """
         # This quantity has only been determined for pilatus_2022 .nxs files.
-        if self.detector_name == self.pilatus_2022:
+        if self.detector_name in [self.pilatus_2022,
+                                  I07Nexus.excalibur_2022_fscan]:
             return self.nx_instrument["diffcalchdr.diffcalc_ub"].value.nxdata
 
 
