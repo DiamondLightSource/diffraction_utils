@@ -30,6 +30,12 @@ from .region import Region
 from .data_file import DataFileBase
 
 
+BAD_NEXUS_FILE = (
+    "Nexus files suck. It turns out your nexus file sucked too. "
+    "If you're seeing this message, it means some non-essential data couldn't "
+    "be parsed by diffraction_utils.")
+
+
 class MissingMetadataWarning(UserWarning):
     """
     Warns a user that some metadata is missing.
@@ -111,37 +117,61 @@ class NexusBase(DataFileBase):
         The numpy array of intensities pointed to by the signal attribute in the
         nexus file.
         """
-        return self.default_nx_data[self.default_signal_name].nxdata
+        # pylint: disable=bare-except
+        try:
+            return self.default_nx_data[self.default_signal_name].nxdata
+        except:
+            return BAD_NEXUS_FILE
 
     def _parse_default_axis(self) -> np.ndarray:
         """
         Returns the nxdata associated with the default axis.
         """
-        return self.default_nx_data[self.default_axis_name].nxdata
+        # pylint: disable=bare-except
+        try:
+            return self.default_nx_data[self.default_axis_name].nxdata
+        except:
+            return BAD_NEXUS_FILE
 
     def _parse_default_signal_name(self):
         """
         Returns the name of the default signal.
         """
-        return self.default_nx_data.signal
+        # pylint: disable=bare-except
+        try:
+            return self.default_nx_data.signal
+        except:
+            return BAD_NEXUS_FILE
 
     def _parse_default_axis_name(self) -> str:
         """
         Returns the name of the default axis.
         """
-        return self.nx_entry[self.nx_entry.default].axes
+        # pylint: disable=bare-except
+        try:
+            return self.nx_entry[self.nx_entry.default].axes
+        except:
+            return BAD_NEXUS_FILE
 
     def _parse_default_nx_data_name(self):
         """
         Returns the name of the default nxdata.
         """
-        return self.nx_entry.default
+        # pylint: disable=bare-except
+        try:
+            return self.nx_entry.default
+        except:
+            return BAD_NEXUS_FILE
 
     def _parse_default_nx_data(self) -> np.ndarray:
         """
         Returns the default NXdata.
         """
-        return self.nx_entry[self.default_nx_data_name]
+        # pylint: disable=bare-except
+        try:
+            return self.nx_entry[self.default_nx_data_name]
+        except:
+            return BAD_NEXUS_FILE
 
     @abstractmethod
     def _parse_motors(self) -> Dict[str, np.ndarray]:
