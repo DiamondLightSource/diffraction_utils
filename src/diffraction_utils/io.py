@@ -449,7 +449,9 @@ class I07Nexus(NexusBase):
 
             roi_dict = json.loads(json_str)
             return [Region.from_dict(roi_dict['Region_1'])]
-
+        if self.detector_name == I07Nexus.excalibur_2022_fscan:
+            # Just ignore the region of interest for fscans.
+            return
         raise NotImplementedError()
 
     def _get_ith_region(self, i: int):
