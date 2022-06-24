@@ -164,6 +164,7 @@ class I07Nexus(NexusBase):
     # Detectors.
     excalibur_detector_2021 = "excroi"
     excalibur_04_2022 = "exr"
+    excalibur_2022_fscan = "EXCALIBUR"
     pilatus_2021 = "pil2roi"
     pilatus_2022 = "PILATUS"
 
@@ -209,8 +210,9 @@ class I07Nexus(NexusBase):
         self.alpha = self._parse_alpha()
         self.chi = self._parse_chi()
 
-        # Get the UB matrix, if it has been stored.
+        # Get the UB and U matrices, if they have been stored.
         self.ub_matrix = self._parse_ub()
+        self.u_matrix = self._parse_u()
 
         # ROIs currently only implemented for the excalibur detector.
         if self.is_excalibur:
@@ -384,6 +386,8 @@ class I07Nexus(NexusBase):
             return I07Nexus.pilatus_2021
         if "PILATUS" in self.nx_entry:
             return I07Nexus.pilatus_2022
+        if "EXCALIBUR" in self.nx_entry:
+            return I07Nexus.excalibur_2022_fscan
 
         # Couldn't recognise the detector.
         raise NotImplementedError("Couldn't recognise detector name.")
@@ -544,16 +548,23 @@ class I07Nexus(NexusBase):
         return self.detector_name in [I07Nexus.pilatus_2021,
                                       I07Nexus.pilatus_2022]
 
+    def _parse_u(self) -> np.ndarray:
+        """
+        Parses the UB matrix from a .nxs file, if it has been stored. If it
+        hasn't, returns None.
+        """
+        # This quantity has only been determined for pilatus_2022 .nxs files.
+        if self.detector_name == self.pilatus_2022:
+            return self.nx_instrument["diffcalchdr.diffcalc_u"].value.nxdata
+
     def _parse_ub(self) -> np.ndarray:
         """
         Parses the UB matrix from a .nxs file, if it has been stored. If it
         hasn't, returns None.
         """
+        # This quantity has only been determined for pilatus_2022 .nxs files.
         if self.detector_name == self.pilatus_2022:
             return self.nx_instrument["diffcalchdr.diffcalc_ub"].value.nxdata
-
-        # This quantity has only been determined for pilatus_2022 .nxs files.
-        return None
 
 
 class I10Nexus(NexusBase):
