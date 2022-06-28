@@ -248,6 +248,19 @@ class I07Nexus(NexusBase):
         if self.is_excalibur:
             self.signal_regions = self._parse_signal_regions()
 
+    def get_image(self, image_number: int) -> np.ndarray:
+        img = super().get_image(image_number)
+
+        # Deal with the fact that the excalibur detector always puts out some
+        # bad frames.
+        if self.is_excalibur and self.has_hdf5_data:
+            bad_frames = [273, 274, 761, 762, 924, 925, 598, 599, 1087, 1088,
+                          110, 111]
+            if image_number in bad_frames:
+                return np.zeros_like(img)
+
+        return img
+
     @property
     def has_image_data(self) -> bool:
         """
