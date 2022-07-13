@@ -388,13 +388,13 @@ class I07Nexus(NexusBase):
         """
         Returns the radius of the DCD circle.
         """
-        return self.motors["dcdc2rad"]
+        return self.motors["dcdc2rad"][0]
 
     def _parse_dcd_omega(self) -> np.ndarray:
         """
         Returns a numpy array of the dcd_omega values throughout the scan.
         """
-        return self.motors["dcdomega"]
+        return self.motors["dcdomega"][0]
 
     def _parse_delta(self) -> np.ndarray:
         """
