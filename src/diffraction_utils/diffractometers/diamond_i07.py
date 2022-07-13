@@ -151,7 +151,7 @@ class I07Diffractometer(DiffractometerBase):
         cone, with a certain cone angle. This method returns this cone angle,
         which turns out to be simply the difference between two Bragg angles.
         """
-        return self._insb_220_theta() - self._insb_111_theta()
+        return self._insb_220_theta - self._insb_111_theta
 
     @property
     def _insb_111_theta(self):
