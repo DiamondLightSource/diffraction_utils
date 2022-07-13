@@ -223,16 +223,15 @@ class I07Nexus(NexusBase):
         if not diff_1:
             raise NotImplementedError(
                 "Diffractometer 2 has not been implemented.")
-        if setup == I07Nexus.dcd:
+        if setup == I07Nexus.vertical:
             raise NotImplementedError(
-                "DCD nexus parsing has not been implemented.")
-        if setup != I07Nexus.horizontal:
-            raise NotImplementedError(
-                "Only horizontal sample stage has been implemented.")
+                "Vertical sample stage has not been implemented.")
 
         # Parse the various i07-specific stuff.
         self.detector_distance = detector_distance
         self.transmission = self._parse_transmission()
+        self.dcd_circle_radius = self._parse_dcd_circle_radius()
+        self.dcd_omega = self._parse_dcd_omega()
         self.delta = self._parse_delta()
         self.gamma = self._parse_gamma()
         self.omega = self._parse_omega()
@@ -357,7 +356,8 @@ class I07Nexus(NexusBase):
         properties.
         """
         instr_motor_names = ["diff1delta", "diff1gamma", "diff1omega",
-                             "diff1theta", "diff1alpha", "diff1chi"]
+                             "diff1theta", "diff1alpha", "diff1chi",
+                             "dcdomega", "dcdc2rad"]
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
@@ -383,6 +383,18 @@ class I07Nexus(NexusBase):
         to strike the sample.
         """
         return float(self.nx_instrument.filterset.transmission)
+
+    def _parse_dcd_circle_radius(self) -> float:
+        """
+        Returns the radius of the DCD circle.
+        """
+        return self.motors["dcdc2rad"]
+
+    def _parse_dcd_omega(self) -> np.ndarray:
+        """
+        Returns a numpy array of the dcd_omega values throughout the scan.
+        """
+        return self.motors["dcdomega"]
 
     def _parse_delta(self) -> np.ndarray:
         """

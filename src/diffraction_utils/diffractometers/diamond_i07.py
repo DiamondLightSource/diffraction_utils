@@ -7,12 +7,25 @@ for the diffractometer in I07's experimental hutch 1.
 """
 
 import numpy as np
+from scipy.constants import Planck, speed_of_light, elementary_charge
 from scipy.spatial.transform import Rotation
 
 from ..diffractometer_base import DiffractometerBase
 from ..frame_of_reference import Frame
 from ..io import I07Nexus
 from ..vector import Vector3
+
+INSB_LATTICE_PARAMETER = 6.479  # In Å.
+
+
+def _energy_to_wavelength(energy_in_ev):
+    """
+    Converts the incident beam energy into wavelength in Å.
+
+    Args:
+        Energy of the probe particle in electron volts.
+    """
+    return Planck*speed_of_light / (energy_in_ev/elementary_charge)
 
 
 class I07Diffractometer(DiffractometerBase):
@@ -36,8 +49,6 @@ class I07Diffractometer(DiffractometerBase):
                  setup: str = "horizontal") -> None:
         super().__init__(data_file, sample_oop)
         self.setup = setup
-        if self.setup == I07Diffractometer.dcd:
-            raise NotImplementedError("DCD not yet implemented.")
         if self.setup == I07Diffractometer.vertical:
             raise NotImplementedError("Vertical geometry not yet supported.")
 
@@ -48,8 +59,6 @@ class I07Diffractometer(DiffractometerBase):
         chi_axis = np.array([1, 0, 0])
         theta_axis = np.array([0, 1, 0])
 
-        if self.setup != I07Diffractometer.horizontal:
-            raise NotImplementedError("Only horizontal setup is supported.")
         if self.setup == I07Diffractometer.horizontal:
             alpha = self.data_file.alpha[scan_index]
             chi = self.data_file.chi[scan_index]
@@ -69,11 +78,8 @@ class I07Diffractometer(DiffractometerBase):
         gamma_axis = np.array([0, 1, 0])
         delta_axis = np.array([1, 0, 0])
 
-        if self.setup == I07Diffractometer.dcd:
-            raise NotImplementedError("DCD setup is not yet supported.")
-        else:
-            gamma = self.data_file.gamma[frame.scan_index]
-            delta = self.data_file.delta[frame.scan_index]
+        gamma = self.data_file.gamma[frame.scan_index]
+        delta = self.data_file.delta[frame.scan_index]
 
         # Create the rotation objects.
         gamma_rot = Rotation.from_rotvec(gamma_axis*gamma, degrees=True)
@@ -90,3 +96,79 @@ class I07Diffractometer(DiffractometerBase):
         # Finally, rotate this vector into the frame that we need it in.
         self.rotate_vector_to_frame(detector_vec, frame)
         return detector_vec
+
+    def get_incident_beam(self, frame: Frame) -> Vector3:
+        if self.setup != self.dcd:
+            return super().get_incident_beam(frame)
+
+        # For the DCD we need to put a bit more effort into calculating the
+        # position of the incident beam.
+        lab_beam_vector = self._dcd_incident_beam_lab
+
+        self.rotate_vector_to_frame(lab_beam_vector, frame)
+        return lab_beam_vector
+
+    @property
+    def _dcd_incident_beam_lab(self) -> Vector3:
+        """
+        Returns a unit vector instance of vector3 that points from the 2nd DCD
+        crystal to the sample.
+        """
+        # First get the displacement between the beam from the synchrotron and
+        # the 2nd crystal in the DCD setup.
+        omega = self.data_file.dcd_omega
+        beam_crystal_displacement = np.array([np.cos(omega), np.sin(omega), 0])
+        beam_crystal_displacement *= self.data_file.dcd_circle_radius
+
+        # But, the beam is travelling *from* the crystal *to* the sample, so
+        # we actually need the -ve of both of these values.
+        beam_crystal_displacement = -beam_crystal_displacement
+
+        # Then simply add the displacement along the z-direction to the sample.
+        beam_crystal_displacement += np.array(
+            [0, 0, self._dcd_sample_distance])
+
+        # Now make an appropriate Vector3 object.
+        return Vector3(beam_crystal_displacement,
+                       Frame(Frame.sample_holder, self))
+
+    @property
+    def _dcd_sample_distance(self):
+        """
+        The distance between the 2nd crystal in the DCD and the sample surface.
+        This is strictly along the direction of the beam as it leaves the
+        synchtrotron.
+        """
+        return self.data_file.dcd_circle_radius/np.tan(self._dcd_cone_angle)
+
+    @property
+    def _dcd_cone_angle(self):
+        """
+        Imagine the path that light takes from the DCD to the sample for a
+        particular value of dcd_omega. It's a line that goes from the 2nd DCD
+        crystal to the sample. Now, imagine the volume of revolution of this
+        line (i.e. the locus of all lines for all values of dcd_omega). It is a
+        cone, with a certain cone angle. This method returns this cone angle,
+        which turns out to be simply the difference between two Bragg angles.
+        """
+        return self._insb_220_theta() - self._insb_111_theta()
+
+    @property
+    def _insb_111_theta(self):
+        """
+        Returns the scattering theta of the InSb (111) reflection. Needed to
+        calculate the incident beam orientation in the DCD setup.
+        """
+        wavelength = _energy_to_wavelength(self.data_file.probe_energy)
+        d_111 = INSB_LATTICE_PARAMETER/np.sqrt(3)
+        return np.arcsin(wavelength/(2*d_111))*180/np.pi
+
+    @property
+    def _insb_220_theta(self):
+        """
+        Returns the scattering theta of the InSb (220) reflection. Needed to
+        calculate the incident beam orientation in the DCD setup.
+        """
+        wavelength = _energy_to_wavelength(self.data_file.probe_energy)
+        d_220 = INSB_LATTICE_PARAMETER/np.sqrt(8)
+        return np.arcsin(wavelength/(2*d_220))*180/np.pi
