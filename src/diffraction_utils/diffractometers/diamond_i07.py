@@ -128,6 +128,9 @@ class I07Diffractometer(DiffractometerBase):
         beam_crystal_displacement += np.array(
             [0, 0, self._dcd_sample_distance])
 
+        # We're expecting a unit vector.
+        beam_crystal_displacement /= np.linalg.norm(beam_crystal_displacement)
+
         # Now make an appropriate Vector3 object.
         return Vector3(beam_crystal_displacement,
                        Frame(Frame.sample_holder, self))
