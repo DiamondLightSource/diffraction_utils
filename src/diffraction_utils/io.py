@@ -232,6 +232,7 @@ class I07Nexus(NexusBase):
         self.transmission = self._parse_transmission()
         self.dcd_circle_radius = self._parse_dcd_circle_radius()
         self.dcd_omega = self._parse_dcd_omega()
+        self.det_rot = self._parse_detector_rot()
         self.delta = self._parse_delta()
         self.gamma = self._parse_gamma()
         self.omega = self._parse_omega()
@@ -357,7 +358,7 @@ class I07Nexus(NexusBase):
         """
         instr_motor_names = ["diff1delta", "diff1gamma", "diff1omega",
                              "diff1theta", "diff1alpha", "diff1chi",
-                             "dcdomega", "dcdc2rad"]
+                             "dcdomega", "dcdc2rad", "diff1prot"]
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
@@ -431,6 +432,12 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the chi values throughout the scan.
         """
         return self.motors["diff1chi"]
+
+    def _parse_detector_rot(self) -> float:
+        """
+        Returns the orientation of the detector.
+        """
+        return self.motors["diff1prot"][0]
 
     def _parse_detector_name(self) -> str:
         """
