@@ -76,7 +76,7 @@ class I07Diffractometer(DiffractometerBase):
     def get_detector_vector(self, frame: Frame) -> Vector3:
        # The following are the axis in the lab frame when all motors are @0.
         gamma_axis = np.array([0, 1, 0])
-        delta_axis = np.array([1, 0, 0])
+        delta_axis = np.array([-1, 0, 0])
 
         gamma = self.data_file.gamma[frame.scan_index]
         delta = self.data_file.delta[frame.scan_index]
@@ -88,11 +88,11 @@ class I07Diffractometer(DiffractometerBase):
         # Combine them (gamma acts after delta).
         total_rot = gamma_rot * delta_rot
 
-        # Act this rotation on the beam with the beam in the lab frame.
-        beam_direction = np.array([0, 0, 1])
-        detector_vec = Vector3(total_rot.apply(beam_direction),
+        # Act this rotation on the [0, 0, 1], which is the vector pointing
+        # to the detector when gamma, delta = 0, 0.
+        to_detector = np.array([0, 0, 1])
+        detector_vec = Vector3(total_rot.apply(to_detector),
                                Frame(Frame.lab, self, frame.scan_index))
-
         # Finally, rotate this vector into the frame that we need it in.
         self.rotate_vector_to_frame(detector_vec, frame)
         return detector_vec
@@ -132,8 +132,7 @@ class I07Diffractometer(DiffractometerBase):
         beam_crystal_vector /= np.linalg.norm(beam_crystal_vector)
 
         # Now make an appropriate Vector3 object.
-        return Vector3(beam_crystal_vector,
-                       Frame(Frame.sample_holder, self))
+        return Vector3(beam_crystal_vector, Frame(Frame.lab, self))
 
     @property
     def _dcd_sample_distance(self):
