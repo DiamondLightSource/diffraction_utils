@@ -130,7 +130,8 @@ class DiffractometerBase(ABC):
             parallel to the incident beam.
         """
         # In the lab frame, our coordinate system is defined such that the beam
-        # is always travelling along [0, 0, 1].
+        # is always travelling along [0, 0, 1] (unless beam is being bent by
+        # e.g. a double crystal deflector (DCD) setup).
         lab_beam = Vector3([0, 0, 1], Frame(Frame.lab, self, frame.scan_index))
 
         # Now simply rotate the beam into the desired frame and return it!
