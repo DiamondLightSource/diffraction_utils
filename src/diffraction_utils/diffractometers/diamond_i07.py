@@ -117,22 +117,22 @@ class I07Diffractometer(DiffractometerBase):
         # First get the displacement between the beam from the synchrotron and
         # the 2nd crystal in the DCD setup.
         omega = self.data_file.dcd_omega
-        beam_crystal_displacement = np.array([np.cos(omega), np.sin(omega), 0])
-        beam_crystal_displacement *= self.data_file.dcd_circle_radius
+        beam_crystal_vector = np.array([-np.cos(omega), np.sin(omega), 0])
+        beam_crystal_vector *= self.data_file.dcd_circle_radius
 
         # But, the beam is travelling *from* the crystal *to* the sample, so
         # we actually need the -ve of both of these values.
-        beam_crystal_displacement = -beam_crystal_displacement
+        beam_crystal_vector = -beam_crystal_vector
 
         # Then simply add the displacement along the z-direction to the sample.
-        beam_crystal_displacement += np.array(
+        beam_crystal_vector += np.array(
             [0, 0, self._dcd_sample_distance])
 
         # We're expecting a unit vector.
-        beam_crystal_displacement /= np.linalg.norm(beam_crystal_displacement)
+        beam_crystal_vector /= np.linalg.norm(beam_crystal_vector)
 
         # Now make an appropriate Vector3 object.
-        return Vector3(beam_crystal_displacement,
+        return Vector3(beam_crystal_vector,
                        Frame(Frame.sample_holder, self))
 
     @property
