@@ -25,7 +25,7 @@ def _energy_to_wavelength(energy_in_ev):
     Args:
         Energy of the probe particle in electron volts.
     """
-    return Planck*speed_of_light / (energy_in_ev/elementary_charge)
+    return Planck*speed_of_light / (energy_in_ev*elementary_charge) * 1e10
 
 
 class I07Diffractometer(DiffractometerBase):
@@ -142,7 +142,7 @@ class I07Diffractometer(DiffractometerBase):
         This is strictly along the direction of the beam as it leaves the
         synchtrotron.
         """
-        return self.data_file.dcd_circle_radius/np.tan(self._dcd_cone_angle)
+        return self.data_file.dcd_circle_radius/np.tan(self._dcd_cone_angle_rad)
 
     @property
     def _dcd_cone_angle(self):
@@ -155,6 +155,13 @@ class I07Diffractometer(DiffractometerBase):
         which turns out to be simply the difference between two Bragg angles.
         """
         return self._insb_220_theta - self._insb_111_theta
+
+    @property
+    def _dcd_cone_angle_rad(self):
+        """
+        As above, but in radians.
+        """
+        return self._dcd_cone_angle * np.pi/180
 
     @property
     def _insb_111_theta(self):
