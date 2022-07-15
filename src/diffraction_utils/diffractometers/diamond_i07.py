@@ -117,7 +117,7 @@ class I07Diffractometer(DiffractometerBase):
         # First get the displacement between the beam from the synchrotron and
         # the 2nd crystal in the DCD setup.
         omega = self.data_file.dcd_omega
-        beam_crystal_vector = np.array([-np.cos(omega), np.sin(omega), 0])
+        beam_crystal_vector = np.array([np.cos(omega), np.sin(omega), 0])
         beam_crystal_vector *= self.data_file.dcd_circle_radius
 
         # But, the beam is travelling *from* the crystal *to* the sample, so
@@ -153,7 +153,7 @@ class I07Diffractometer(DiffractometerBase):
         cone, with a certain cone angle. This method returns this cone angle,
         which turns out to be simply the difference between two Bragg angles.
         """
-        return self._insb_220_theta - self._insb_111_theta
+        return (self._insb_220_theta - self._insb_111_theta)*2
 
     @property
     def _dcd_cone_angle_rad(self):
