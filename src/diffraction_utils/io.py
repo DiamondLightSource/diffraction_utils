@@ -216,8 +216,16 @@ class I07Nexus(NexusBase):
         self.nx_entry = self._parse_nx_entry()
         self.detector_name = self._parse_detector_name()
 
+        # Initially, just set the detector rotation to be 0. This will be parsed
+        # properly later, but some value is needed to run super().__init__()
+        self.det_rot = 0
+
         # Now we can call super().__init__
         super().__init__(local_path, local_data_path, locate_local_data)
+
+        # Now correct our value of det_rot and image_shape.
+        self.det_rot = self._parse_detector_rot()
+        self.image_shape = self._parse_image_shape()
 
         # Only a subset of i07's capabilities can be handled by this library.
         if not diff_1:
@@ -232,7 +240,6 @@ class I07Nexus(NexusBase):
         self.transmission = self._parse_transmission()
         self.dcd_circle_radius = self._parse_dcd_circle_radius()
         self.dcd_omega = self._parse_dcd_omega()
-        self.det_rot = self._parse_detector_rot()
         self.delta = self._parse_delta()
         self.gamma = self._parse_gamma()
         self.omega = self._parse_omega()
@@ -260,6 +267,13 @@ class I07Nexus(NexusBase):
                 return np.zeros_like(img)
 
         return img
+
+    @property
+    def is_rotated(self) -> bool:
+        """
+        Returns True if the detector has been rotated by 90 degrees.
+        """
+        return (self.det_rot > 89) and (self.det_rot < 91)
 
     @property
     def has_image_data(self) -> bool:
@@ -322,8 +336,12 @@ class I07Nexus(NexusBase):
         detector.
         """
         if self.is_excalibur:
+            if self.is_rotated:
+                return 2069, 515
             return 515, 2069
         if self.is_pilatus:
+            if self.is_rotated:
+                return 1475, 1679
             return 1679, 1475
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
