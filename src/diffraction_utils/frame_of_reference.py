@@ -32,14 +32,18 @@ class Frame:
     sample_holder = 'sample holder'
     hkl = 'hkl'
     lab = 'lab'
+    cartesian = 'cartesian'
+    polar = 'polar'
 
     def __init__(self,
                  frame_name: str,
                  diffractometer: 'DiffractometerBase' = None,
-                 scan_index: int = None):
+                 scan_index: int = None,
+                 coordinates: str = cartesian):
         self.frame_name = frame_name
         self.diffractometer = diffractometer
         self.scan_index = scan_index
+        self.coordinates = coordinates
 
     def __eq__(self, __o: object) -> bool:
         if not isinstance(__o, type(self)):
