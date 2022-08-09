@@ -246,6 +246,10 @@ class I07Nexus(NexusBase):
         self.theta = self._parse_theta()
         self.alpha = self._parse_alpha()
         self.chi = self._parse_chi()
+        self.dpsx = self._parse_dpsx()
+        self.dpsy = self._parse_dpsy()
+        self.dpsz = self._parse_dpsz()
+        self.dpsz2 = self._parse_dpsz2()
 
         # Get the UB and U matrices, if they have been stored.
         self.ub_matrix = self._parse_ub()
@@ -374,9 +378,12 @@ class I07Nexus(NexusBase):
         encourage users to directly access the cleaner theta, two_theta etc.
         properties.
         """
-        instr_motor_names = ["diff1delta", "diff1gamma", "diff1omega",
-                             "diff1theta", "diff1alpha", "diff1chi",
-                             "dcdomega", "dcdc2rad", "diff1prot"]
+        instr_motor_names = [
+            "diff1delta", "diff1gamma", "diff1omega",  # Basic motors.
+            "diff1theta", "diff1alpha", "diff1chi",  # Basic motors.
+            "dcdomega", "dcdc2rad", "diff1prot",  # DCD values.
+            "dpsx", "dpsy", "dpsz", "dpsz2"  # DPS values.
+        ]
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
@@ -456,6 +463,30 @@ class I07Nexus(NexusBase):
         Returns the orientation of the detector.
         """
         return self.motors["diff1prot"][0]
+
+    def _parse_dpsx(self) -> np.ndarray:
+        """
+        Returns the x-value of the DPS system.
+        """
+        return self.motors["dpsx"]
+
+    def _parse_dpsy(self) -> np.ndarray:
+        """
+        Returns the y-value of the DPS system.
+        """
+        return self.motors["dpsy"]
+
+    def _parse_dpsz(self) -> np.ndarray:
+        """
+        Returns the z-value of the DPS system.
+        """
+        return self.motors["dpsz"]
+
+    def _parse_dpsz2(self) -> np.ndarray:
+        """
+        Returns the z2-value of the DPS system.
+        """
+        return self.motors["dpsz2"]
 
     def _parse_detector_name(self) -> str:
         """
