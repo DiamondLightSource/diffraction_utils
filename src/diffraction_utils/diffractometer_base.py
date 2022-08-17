@@ -206,6 +206,10 @@ class DiffractometerBase(ABC):
         if vector.frame.frame_name == to_frame.frame_name:
             return
 
+        # If the vector doesn't have a scan_index, default to to_frame's index.
+        if vector.frame.scan_index is None:
+            vector.frame.scan_index = to_frame.scan_index
+
         # Okay, we're changing frame. We have to handle each case individually.
         match vector.frame.frame_name, to_frame.frame_name:
             case Frame.lab, Frame.hkl:
