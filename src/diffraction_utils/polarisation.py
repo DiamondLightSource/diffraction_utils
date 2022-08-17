@@ -28,3 +28,6 @@ class Polarisation:
     def __init__(self, kind: str, vector: Vector3 = None) -> None:
         self.kind = kind
         self.vector = vector
+
+        if (self.vector is None) and (self.kind != Polarisation.unpolarised):
+            raise ValueError("Polarised beams must be described by a vector.")
