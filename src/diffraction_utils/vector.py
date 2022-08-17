@@ -54,9 +54,9 @@ class Vector3:
         Args:
             frame:
                 The name of the frame of reference to transform to.
-            diffractometer:
+            diffractometer (optional):
                 The diffractometer we should use to carry out the
-                transformation.
+                transformation. If this is None, frame.diffractometer is used.
         """
         if diffractometer is None:
             diffractometer = frame.diffractometer
