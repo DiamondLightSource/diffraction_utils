@@ -13,6 +13,8 @@ import h5py
 import numpy as np
 from PIL import Image as PILImageModule
 
+from .polarisation import Polarisation
+
 
 class NoHdf5Error(Exception):
     """
@@ -55,7 +57,7 @@ class DataFileBase(ABC):
         self.local_data_path = local_data_path
 
         # Default the beam to be unpolarised.
-        self.polarisation = None
+        self.polarisation = Polarisation(Polarisation.unpolarised)
 
         # Run the various parsers to initialize non-trivial attributes.
         self.probe_energy = self._parse_probe_energy()

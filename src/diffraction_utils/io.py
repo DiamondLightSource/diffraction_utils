@@ -28,6 +28,7 @@ from nexusformat.nexus import nxload
 
 from .data_file import DataFileBase
 from .frame_of_reference import Frame
+from .polarisation import Polarisation
 from .region import Region
 from .vector import Vector3
 
@@ -213,8 +214,9 @@ class I07Nexus(NexusBase):
                  diff_1=True,
                  locate_local_data=True):
         # The beam is always polarised along the synchrotron x-axis in I07.
-        self.polarisation = Vector3(np.array([1, 0, 0]),
-                                    Frame(Frame.lab))
+        self.polarisation = Polarisation(
+            Polarisation.linear,
+            Vector3(np.array([1, 0, 0]), Frame(Frame.lab)))
 
         # We need to know what detector we're using before doing any further
         # initialization.
