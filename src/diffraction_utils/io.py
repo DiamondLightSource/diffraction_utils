@@ -213,11 +213,6 @@ class I07Nexus(NexusBase):
                  setup: str = 'horizontal',
                  diff_1=True,
                  locate_local_data=True):
-        # The beam is always polarised along the synchrotron x-axis in I07.
-        self.polarisation = Polarisation(
-            Polarisation.linear,
-            Vector3(np.array([1, 0, 0]), Frame(Frame.lab)))
-
         # We need to know what detector we're using before doing any further
         # initialization.
         self.nxfile = nxload(local_path)
@@ -231,9 +226,13 @@ class I07Nexus(NexusBase):
         # Now we can call super().__init__
         super().__init__(local_path, local_data_path, locate_local_data)
 
-        # Now correct our value of det_rot and image_shape.
+        # Now correct our value of det_rot, image_shape and polarisation.
         self.det_rot = self._parse_detector_rot()
         self.image_shape = self._parse_image_shape()
+        # The beam is always polarised along the synchrotron x-axis in I07.
+        self.polarisation = Polarisation(
+            Polarisation.linear,
+            Vector3(np.array([1, 0, 0]), Frame(Frame.lab)))
 
         # Only a subset of i07's capabilities can be handled by this library.
         if not diff_1:
