@@ -54,6 +54,9 @@ class DataFileBase(ABC):
         self.local_path = local_path
         self.local_data_path = local_data_path
 
+        # Default the beam to be unpolarised.
+        self.polarisation = None
+
         # Run the various parsers to initialize non-trivial attributes.
         self.probe_energy = self._parse_probe_energy()
         self.default_axis_name = self._parse_default_axis_name()

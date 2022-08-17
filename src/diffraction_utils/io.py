@@ -26,8 +26,10 @@ import numpy as np
 from nexusformat.nexus import nxload
 
 
-from .region import Region
 from .data_file import DataFileBase
+from .frame_of_reference import Frame
+from .region import Region
+from .vector import Vector3
 
 
 BAD_NEXUS_FILE = (
@@ -210,6 +212,10 @@ class I07Nexus(NexusBase):
                  setup: str = 'horizontal',
                  diff_1=True,
                  locate_local_data=True):
+        # The beam is always polarised along the synchrotron x-axis in I07.
+        self.polarisation = Vector3(np.array([1, 0, 0]),
+                                    Frame(Frame.lab))
+
         # We need to know what detector we're using before doing any further
         # initialization.
         self.nxfile = nxload(local_path)
@@ -700,6 +706,9 @@ class I10Nexus(NexusBase):
                  detector_distance: float = None,
                  locate_local_data: bool = True):
         super().__init__(local_path, local_data_path, locate_local_data)
+
+        # TODO: properly parse this when this becomes relevant.
+        self.polarisation = NotImplemented
 
         # Warn the user if detector distance hasn't been set.
         if detector_distance is None:
