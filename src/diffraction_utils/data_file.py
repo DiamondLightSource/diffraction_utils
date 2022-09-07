@@ -275,6 +275,12 @@ def _try_to_find_files(filenames: List[str],
     """
     found_files = []
 
+    # This function was written to handle strings, not pathlib.Paths.
+    # It would be nice to update this one day, but for now I'm just casting
+    # Paths to strings.
+    filenames = [str(x) for x in filenames]
+    additional_search_paths = [str(x) for x in additional_search_paths]
+
     # If we had only one file, make a list out of it.
     if not hasattr(filenames, "__iter__"):
         filenames = [filenames]
