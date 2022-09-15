@@ -232,7 +232,6 @@ class I07Nexus(NexusBase):
                  local_data_path: Union[str, Path] = '',
                  detector_distance=None,
                  setup: str = 'horizontal',
-                 diff_1=True,
                  locate_local_data=True):
         # We need to know what detector we're using before doing any further
         # initialization.
@@ -255,18 +254,16 @@ class I07Nexus(NexusBase):
             Polarisation.linear,
             Vector3(np.array([1, 0, 0]), Frame(Frame.lab)))
 
-        # Only a subset of i07's capabilities can be handled by this library.
-        if not diff_1:
-            raise NotImplementedError(
-                "Diffractometer 2 has not been implemented.")
-        if setup == I07Nexus.vertical:
-            raise NotImplementedError(
-                "Vertical sample stage has not been implemented.")
-
         # Work out which experimental hutch this was carried out in.
         self.is_eh1 = self._is_eh1
         self.is_eh2 = self._is_eh2
         self._check_hutch_parsing()
+
+        # Record the scattering geometry.
+        if self.is_eh2:
+            self.setup = I07Nexus.vertical
+        if self.is_eh1:
+            self.setup = setup
 
         # Parse the various i07-specific stuff.
         self.detector_distance = detector_distance
