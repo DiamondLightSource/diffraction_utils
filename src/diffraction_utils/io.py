@@ -120,7 +120,13 @@ class NexusBase(DataFileBase):
         """
         Returns the list of scan fields contained within the diamond scan.
         """
-        return self.diamond_scan["scan_fields"].nxdata
+        # Some explicit string casts in case these are byte arrays.
+        try:
+            return [x.decode('utf-8')
+                    for x in self.diamond_scan["scan_fields"].nxdata]
+        except AttributeError:
+            # These are strings, not byte arrays, so we can just return now.
+            return self.diamond_scan["scan_fields"].nxdata
 
     def _parse_nx_detector(self):
         """
@@ -265,14 +271,6 @@ class I07Nexus(NexusBase):
         # Now we can call super().__init__
         super().__init__(local_path, local_data_path, locate_local_data)
 
-        # Now correct our value of det_rot, image_shape and polarisation.
-        self.det_rot = self._parse_detector_rot()
-        self.image_shape = self._parse_image_shape()
-        # The beam is always polarised along the synchrotron x-axis in I07.
-        self.polarisation = Polarisation(
-            Polarisation.linear,
-            Vector3(np.array([1, 0, 0]), Frame(Frame.lab)))
-
         # Work out which experimental hutch this was carried out in.
         self.is_eh1 = self._is_eh1
         self.is_eh2 = self._is_eh2
@@ -283,6 +281,14 @@ class I07Nexus(NexusBase):
             self.setup = I07Nexus.vertical
         if self.is_eh1:
             self.setup = setup
+
+        # Now correct our value of det_rot, image_shape and polarisation.
+        self.det_rot = self._parse_detector_rot()
+        self.image_shape = self._parse_image_shape()
+        # The beam is always polarised along the synchrotron x-axis in I07.
+        self.polarisation = Polarisation(
+            Polarisation.linear,
+            Vector3(np.array([1, 0, 0]), Frame(Frame.lab)))
 
         # Parse the various i07-specific stuff.
         self.detector_distance = detector_distance
@@ -345,6 +351,7 @@ class I07Nexus(NexusBase):
         # you're scanning something in ehN, you're bound to have at least one
         # scan field starting with 'diffN' because of how everything is named.
         for field in self.scan_fields:
+            print(field)
             if field.startswith('diff2'):
                 return True
         return False
@@ -479,9 +486,14 @@ class I07Nexus(NexusBase):
             "dpsx", "dpsy", "dpsz", "dpsz2"  # DPS values.
         ]
 
-        # Correct the motor names if we're in diffractometer 2.
-        if self.is_eh2:
-            motor_names = [x.replace("diff1", "diff2") for x in motor_names]
+        motor_names_eh2 = [
+            "fourc.diff2delta", "fourc.diff2gamma",  # Basic motors.
+            "fourc.diff2omega", "fourc.diff2alpha"  # Basic motors.
+        ]
+
+        # Correct the motor names if we're in experimental hutch 2.
+        if self._is_eh2:
+            motor_names = motor_names_eh2
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
@@ -511,79 +523,98 @@ class I07Nexus(NexusBase):
         """
         Returns the radius of the DCD circle.
         """
-        return self.motors["dcdc2rad"][0]
+        if self.is_eh1:
+            return self.motors["dcdc2rad"][0]
 
     def _parse_dcd_omega(self) -> np.ndarray:
         """
         Returns a numpy array of the dcd_omega values throughout the scan.
         """
-        return self.motors["dcdomega"][0]
+        if self.is_eh1:
+            return self.motors["dcdomega"][0]
 
     def _parse_delta(self) -> np.ndarray:
         """
         Returns a numpy array of the delta values throughout the scan.
         """
+        if self.is_eh2:
+            return self.motors["fourc.diff2delta"]
         return self.motors["diff1delta"]
 
     def _parse_gamma(self) -> np.ndarray:
         """
         Returns a numpy array of the gamma values throughout the scan.
         """
+        if self.is_eh2:
+            return self.motors["fourc.diff2gamma"]
         return self.motors["diff1gamma"]
 
     def _parse_omega(self) -> np.ndarray:
         """
         Returns a numpy array of the omega values throughout the scan.
         """
+        if self.is_eh2:
+            return self.motors["fourc.diff2omega"]
         return self.motors["diff1omega"]
-
-    def _parse_theta(self) -> np.ndarray:
-        """
-        Returns a numpy array of the theta values throughout the scan.
-        """
-        return self.motors["diff1theta"]
 
     def _parse_alpha(self) -> np.ndarray:
         """
         Returns a numpy array of the alpha values throughout the scan.
         """
+        if self.is_eh2:
+            return self.motors["fourc.diff2alpha"]
         return self.motors["diff1alpha"]
+
+    def _parse_theta(self) -> np.ndarray:
+        """
+        Returns a numpy array of the theta values throughout the scan.
+        """
+        if self.is_eh1:
+            return self.motors["diff1theta"]
 
     def _parse_chi(self) -> np.ndarray:
         """
         Returns a numpy array of the chi values throughout the scan.
         """
-        return self.motors["diff1chi"]
+        if self.is_eh1:
+            return self.motors["diff1chi"]
 
     def _parse_detector_rot(self) -> float:
         """
         Returns the orientation of the detector.
         """
-        return self.motors["diff1prot"][0]
+        if self.is_eh1:
+            return self.motors["diff1prot"][0]
+        # For now, assume unrotated detectors in eh2.
+        return 0
 
     def _parse_dpsx(self) -> np.ndarray:
         """
         Returns the x-value of the DPS system.
         """
-        return self.motors["dpsx"][0]
+        if self.is_eh1:
+            return self.motors["dpsx"][0]
 
     def _parse_dpsy(self) -> np.ndarray:
         """
         Returns the y-value of the DPS system.
         """
-        return self.motors["dpsy"][0]
+        if self.is_eh1:
+            return self.motors["dpsy"][0]
 
     def _parse_dpsz(self) -> np.ndarray:
         """
         Returns the z-value of the DPS system.
         """
-        return self.motors["dpsz"][0]
+        if self.is_eh1:
+            return self.motors["dpsz"][0]
 
     def _parse_dpsz2(self) -> np.ndarray:
         """
         Returns the z2-value of the DPS system.
         """
-        return self.motors["dpsz2"][0]
+        if self.is_eh1:
+            return self.motors["dpsz2"][0]
 
     def _parse_detector_name(self) -> str:
         """
