@@ -15,6 +15,7 @@ from ..frame_of_reference import Frame
 from ..io import I07Nexus
 from ..vector import Vector3
 
+
 INSB_LATTICE_PARAMETER = 6.479  # In Å.
 
 
@@ -54,22 +55,26 @@ class I07Diffractometer(DiffractometerBase):
         # The following are the axis in the lab frame when all motors are @0.
         # Note that omega is like theta but for the vertical axis (I think!)
         alpha_axis = np.array([0, 1, 0])
-        theta_axis = np.array([0, 1, 0])
         omega_axis = np.array([1, 0, 0])
-        chi_axis = np.array([1, 0, 0])
 
         alpha = self.data_file.alpha[scan_index]
-        theta = self.data_file.theta[scan_index]
         omega = self.data_file.omega[scan_index]
-        chi = self.data_file.chi[scan_index]
 
         # Create the rotation objects.
         alpha_rot = Rotation.from_rotvec(alpha_axis*alpha, degrees=True)
-        theta_rot = Rotation.from_rotvec(theta_axis*theta, degrees=True)
         omega_rot = Rotation.from_rotvec(omega_axis*omega, degrees=True)
-        chi_rot = Rotation.from_rotvec(chi_axis*chi, degrees=True)
 
         if self.setup != self.vertical:
+            # These axes aren't always parsed in vertical geometries.
+            theta_axis = np.array([0, 1, 0])
+            chi_axis = np.array([1, 0, 0])
+
+            theta = self.data_file.theta[scan_index]
+            chi = self.data_file.chi[scan_index]
+
+            theta_rot = Rotation.from_rotvec(theta_axis*theta, degrees=True)
+            chi_rot = Rotation.from_rotvec(chi_axis*chi, degrees=True)
+
             # Alpha acts after chi, which acts after theta. So, apply rotations
             # in the correct order to get the U matrix:
             return alpha_rot*chi_rot*theta_rot
