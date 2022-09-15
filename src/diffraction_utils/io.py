@@ -39,6 +39,13 @@ BAD_NEXUS_FILE = (
     "be parsed by diffraction_utils.")
 
 
+class BadNexusFileError(Exception):
+    """
+    Warns that a nexus file cannot be parsed because it is incorrectly
+    formatted.
+    """
+
+
 class MissingMetadataWarning(UserWarning):
     """
     Warns a user that some metadata is missing.
@@ -76,12 +83,26 @@ class NexusBase(DataFileBase):
         self.default_nx_data = self._parse_default_nx_data()
         self.nx_instrument = self._parse_nx_instrument()
         self.nx_detector = self._parse_nx_detector()
+        self.diamond_scan = self._parse_diamond_scan()
+        self.scan_fields = self._parse_scan_fields()
 
         # Now we can call super().__init__ to run the remaining parsers.
         super().__init__(local_path, local_data_path, locate_local_data)
 
         # Finally, parse the motors.
         self.motors = self._parse_motors()
+
+    def _parse_diamond_scan(self):
+        """
+        Parses the diamond_scan NXcollection inside the main NXentry.
+        """
+        return self.nx_entry["diamond_scan"]
+
+    def _parse_scan_fields(self):
+        """
+        Returns the list of scan fields contained within the diamond scan.
+        """
+        return self.diamond_scan["scan_fields"].nxdata
 
     def _parse_nx_detector(self):
         """
@@ -242,6 +263,11 @@ class I07Nexus(NexusBase):
             raise NotImplementedError(
                 "Vertical sample stage has not been implemented.")
 
+        # Work out which experimental hutch this was carried out in.
+        self.is_eh1 = self._is_eh1
+        self.is_eh2 = self._is_eh2
+        self._check_hutch_parsing()
+
         # Parse the various i07-specific stuff.
         self.detector_distance = detector_distance
         self.transmission = self._parse_transmission()
@@ -280,6 +306,34 @@ class I07Nexus(NexusBase):
         return img
 
     @property
+    def _is_eh1(self) -> bool:
+        """
+        Works out if the experiment was carried out in experimental hutch 1
+        (eh1). Returns the corresponding boolean.
+        """
+        # This check is very basic, but at the same time, should be robust. If
+        # you're scanning something in ehN, you're bound to have at least one
+        # scan field starting with 'diffN' because of how everything is named.
+        for field in self.scan_fields:
+            if field.startswith('diff1'):
+                return True
+        return False
+
+    @property
+    def _is_eh2(self) -> bool:
+        """
+        Works out if the experiment was carried out in experimental hutch 2
+        (eh2). Returns the corresponding boolean.
+        """
+        # This check is very basic, but at the same time, should be robust. If
+        # you're scanning something in ehN, you're bound to have at least one
+        # scan field starting with 'diffN' because of how everything is named.
+        for field in self.scan_fields:
+            if field.startswith('diff2'):
+                return True
+        return False
+
+    @property
     def is_rotated(self) -> bool:
         """
         Returns True if the detector has been rotated by 90 degrees.
@@ -310,6 +364,20 @@ class I07Nexus(NexusBase):
             # If something went really wrong, there mustn't be .h5 data.
             return False
         return False
+
+    def _check_hutch_parsing(self) -> None:
+        """
+        Makes sure that the hutch was parsed correctly. If not, raises an error.
+
+        Raises:
+            BadNexusFileError
+        """
+        if self.is_eh1 and self.is_eh2:
+            raise BadNexusFileError(
+                "This data seemed to belong to both eh1 and eh2.")
+        if not (self.is_eh1 or self.is_eh2):
+            raise BadNexusFileError(
+                "This nexus file didn't seem to belong to eh1 or eh2.")
 
     def _parse_hdf5_internal_path(self) -> str:
         """
