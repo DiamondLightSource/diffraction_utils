@@ -450,16 +450,20 @@ class I07Nexus(NexusBase):
         encourage users to directly access the cleaner theta, two_theta etc.
         properties.
         """
-        instr_motor_names = [
+        motor_names = [
             "diff1delta", "diff1gamma", "diff1omega",  # Basic motors.
             "diff1theta", "diff1alpha", "diff1chi",  # Basic motors.
             "dcdomega", "dcdc2rad", "diff1prot",  # DCD values.
             "dpsx", "dpsy", "dpsz", "dpsz2"  # DPS values.
         ]
 
+        # Correct the motor names if we're in diffractometer 2.
+        if self.is_eh2:
+            motor_names = [x.replace("diff1", "diff2") for x in motor_names]
+
         motors_dict = {}
         ones = np.ones(self.scan_length)
-        for name in instr_motor_names:
+        for name in motor_names:
             # This could be a link to the data, a single value or a numpy array
             # containing varying values. We need to handle all three cases. The
             # last two cases are handled by multiplying by an array of ones.
