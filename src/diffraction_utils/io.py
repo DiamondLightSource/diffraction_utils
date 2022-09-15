@@ -221,6 +221,7 @@ class I07Nexus(NexusBase):
     excalibur_2022_fscan = "EXCALIBUR"
     pilatus_2021 = "pil2roi"
     pilatus_2022 = "PILATUS"
+    pilatus_eh2_2022 = "pil3roi"
 
     # Setups.
     horizontal = "horizontal"
@@ -577,6 +578,8 @@ class I07Nexus(NexusBase):
             return I07Nexus.pilatus_2022
         if "EXCALIBUR" in self.nx_entry:
             return I07Nexus.excalibur_2022_fscan
+        if "pil3roi" in self.nx_entry:
+            return I07Nexus.pilatus_eh2_2022
 
         # Couldn't recognise the detector.
         raise NotImplementedError("Couldn't recognise detector name.")
@@ -737,7 +740,8 @@ class I07Nexus(NexusBase):
         Returns whether or not we're currently using the pilatus detector.
         """
         return self.detector_name in [I07Nexus.pilatus_2021,
-                                      I07Nexus.pilatus_2022]
+                                      I07Nexus.pilatus_2022,
+                                      I07Nexus.pilatus_eh2_2022]
 
     def _parse_u(self) -> np.ndarray:
         """
