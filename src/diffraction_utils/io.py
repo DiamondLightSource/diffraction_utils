@@ -52,6 +52,24 @@ class MissingMetadataWarning(UserWarning):
     """
 
 
+def warn_missing_metadata(func):
+    """
+    Wrap _parse functions with this to make them non-essential. If a parser's
+    corresponding information is missing, a warning will be printed instead of
+    an error being raised. This means that, if some DAQ dude fucked up and
+    there's a load of data missing from the nexus file, at least someone can
+    retroactively add in the data.
+    """
+    def inner_function(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except nx.NeXusError:
+            warn(MissingMetadataWarning(
+                f"{func.__name__} failed to parse a value, so its value will "
+                "default to None."))
+    return inner_function
+
+
 class NexusBase(DataFileBase):
     """
     This class contains *mostly* beamline agnostic nexus parsing convenience
@@ -377,6 +395,7 @@ class I07Nexus(NexusBase):
             raise BadNexusFileError(
                 "This nexus file didn't seem to belong to eh1 or eh2.")
 
+    @warn_missing_metadata
     def _parse_hdf5_internal_path(self) -> str:
         """
         This needs to be implemented properly, as i07 scans *can* have data
@@ -384,6 +403,7 @@ class I07Nexus(NexusBase):
         """
         return self.nx_detector["data"]._target
 
+    @warn_missing_metadata
     def _parse_raw_hdf5_path(self) -> Union[str, Path]:
         """
         This needs to be implemented properly, as i07 scans *can* have data
@@ -391,6 +411,7 @@ class I07Nexus(NexusBase):
         """
         return self.nx_detector["data"]._filename
 
+    @warn_missing_metadata
     def _parse_probe_energy(self):
         """
         Returns the energy of the probe particle parsed from this NexusFile.
@@ -478,6 +499,7 @@ class I07Nexus(NexusBase):
                         self.nx_instrument[name].value_set.nxlink.nxdata
         return motors_dict
 
+    @warn_missing_metadata
     def _parse_transmission(self):
         """
         Proportional to the fraction of probe particles allowed by an attenuator
@@ -584,6 +606,7 @@ class I07Nexus(NexusBase):
         # Couldn't recognise the detector.
         raise NotImplementedError("Couldn't recognise detector name.")
 
+    @warn_missing_metadata
     def _parse_signal_regions(self) -> List[Region]:
         """
         Returns a list of region objects that define the location of the signal.
@@ -616,6 +639,7 @@ class I07Nexus(NexusBase):
             return
         raise NotImplementedError()
 
+    @warn_missing_metadata
     def _get_ith_region(self, i: int):
         """
         Returns the ith region of interest found in the .nxs file.
@@ -743,6 +767,7 @@ class I07Nexus(NexusBase):
                                       I07Nexus.pilatus_2022,
                                       I07Nexus.pilatus_eh2_2022]
 
+    @warn_missing_metadata
     def _parse_u(self) -> np.ndarray:
         """
         Parses the UB matrix from a .nxs file, if it has been stored. If it
@@ -752,6 +777,7 @@ class I07Nexus(NexusBase):
         if self.detector_name == self.pilatus_2022:
             return self.nx_instrument["diffcalchdr.diffcalc_u"].value.nxdata
 
+    @warn_missing_metadata
     def _parse_ub(self) -> np.ndarray:
         """
         Parses the UB matrix from a .nxs file, if it has been stored. If it
