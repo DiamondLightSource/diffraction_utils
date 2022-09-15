@@ -49,29 +49,34 @@ class I07Diffractometer(DiffractometerBase):
                  setup: str = "horizontal") -> None:
         super().__init__(data_file, sample_oop)
         self.setup = setup
-        if self.setup == I07Diffractometer.vertical:
-            raise NotImplementedError("Vertical geometry not yet supported.")
 
     def get_u_matrix(self, scan_index: int) -> Rotation:
         # The following are the axis in the lab frame when all motors are @0.
         # Note that omega is like theta but for the vertical axis (I think!)
         alpha_axis = np.array([0, 1, 0])
-        chi_axis = np.array([1, 0, 0])
         theta_axis = np.array([0, 1, 0])
+        omega_axis = np.array([1, 0, 0])
+        chi_axis = np.array([1, 0, 0])
 
-        if self.setup in (I07Diffractometer.horizontal, I07Diffractometer.dcd):
-            alpha = self.data_file.alpha[scan_index]
-            chi = self.data_file.chi[scan_index]
-            theta = self.data_file.theta[scan_index]
+        alpha = self.data_file.alpha[scan_index]
+        theta = self.data_file.theta[scan_index]
+        omega = self.data_file.omega[scan_index]
+        chi = self.data_file.chi[scan_index]
 
         # Create the rotation objects.
         alpha_rot = Rotation.from_rotvec(alpha_axis*alpha, degrees=True)
-        chi_rot = Rotation.from_rotvec(chi_axis*chi, degrees=True)
         theta_rot = Rotation.from_rotvec(theta_axis*theta, degrees=True)
+        omega_rot = Rotation.from_rotvec(omega_axis*omega, degrees=True)
+        chi_rot = Rotation.from_rotvec(chi_axis*chi, degrees=True)
 
-        # Alpha acts after chi, which acts after theta. So, apply rotations
-        # in the correct order to get the U matrix:
-        return alpha_rot*chi_rot*theta_rot
+        if self.setup != self.vertical:
+            # Alpha acts after chi, which acts after theta. So, apply rotations
+            # in the correct order to get the U matrix:
+            return alpha_rot*chi_rot*theta_rot
+
+        # If execution reaches here, we're in vertical scattering and we only
+        # need omega.
+        return omega_rot
 
     def get_detector_vector(self, frame: Frame) -> Vector3:
        # The following are the axis in the lab frame when all motors are @0.
