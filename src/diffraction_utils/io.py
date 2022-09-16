@@ -13,7 +13,11 @@ class and its children.
 # Some useless super delegations are useful for quick abstractmethod overrides.
 # pylint: disable=useless-super-delegation
 
+# Prevents pylint from popping up every time you write a todo.
+# pylint: disable=fixme
 
+
+import copy
 import json
 from abc import abstractmethod
 from pathlib import Path
@@ -81,7 +85,7 @@ def warn_missing_metadata(func):
     """
     def inner_function(*args, **kwargs):
         try:
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         except nx.NeXusError:
             warn(MissingMetadataWarning(
                 f"{func.__name__} failed to parse a value, so its value will "
@@ -298,8 +302,6 @@ class I07Nexus(NexusBase):
         # Work out which experimental hutch this was carried out in.
         self.is_eh1 = self._is_eh1
         self.is_eh2 = self._is_eh2
-        print("EH1:", self.is_eh1)
-        print("EH2:", self.is_eh2)
         self._check_hutch_parsing()
 
         # Record the scattering geometry.
@@ -463,7 +465,10 @@ class I07Nexus(NexusBase):
         This needs to be implemented properly, as i07 scans *can* have data
         stored in .h5 files.
         """
-        return self.nx_detector["data"]._filename
+        filename = self.nx_detector["data"]._filename
+        if filename is None:
+            filename = self.nx_detector["data"].nxdata
+        return filename
 
     @warn_missing_metadata
     def _parse_probe_energy(self):
