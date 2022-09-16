@@ -505,6 +505,10 @@ class I07Nexus(NexusBase):
         if self._is_eh2:
             motor_names = motor_names_eh2
 
+        # Set the fourc names if our detector name is pil3roi.
+        if self.detector_name == I07Nexus.pilatus_eh2_2022:
+            motor_names = motor_names_eh2_fourc
+
         motors_dict = {}
         ones = np.ones(self.scan_length)
         for name in motor_names:
