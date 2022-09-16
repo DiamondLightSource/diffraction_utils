@@ -369,7 +369,8 @@ class I07Nexus(NexusBase):
         # As of 09/2022, scan_fields may not be populated, in which case it's
         # an empty list in this code. Instead lets look for keys in the detector
         # that begin with diff1.
-        for key in self.nx_detector:
+        # TODO: if this ever breaks, get angry.
+        for key in self.nx_entry[self.detector_name]:
             # Make sure that the key is utf-8.
             key = _get_utf_8(key)
             if key.startswith('diff1'):
@@ -393,7 +394,8 @@ class I07Nexus(NexusBase):
         # As of 09/2022, scan_fields may not be populated, in which case it's
         # an empty list in this code. Instead lets look for keys in the detector
         # that begin with diff2.
-        for key in self.nx_detector:
+        # TODO: if this ever breaks, get angry.
+        for key in self.nx_entry[self.detector_name]:
             # Make sure that the key is utf-8.
             key = _get_utf_8(key)
             if key.startswith('diff2'):
