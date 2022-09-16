@@ -298,6 +298,8 @@ class I07Nexus(NexusBase):
         # Work out which experimental hutch this was carried out in.
         self.is_eh1 = self._is_eh1
         self.is_eh2 = self._is_eh2
+        print("EH1:", self.is_eh1)
+        print("EH2:", self.is_eh2)
         self._check_hutch_parsing()
 
         # Record the scattering geometry.
@@ -499,10 +501,10 @@ class I07Nexus(NexusBase):
         site, but used to guess where you've stored the data file locally.
         """
         if self.is_pilatus:
-            path_array = self.nx_detector["image_data"]._value
+            path_array = self.nx_detector["image_data"].nxdata
         if self.is_excalibur:
             path_array = [
-                self.nx_instrument["excalibur_h5_data/exc_path"]._value]
+                self.nx_instrument["excalibur_h5_data/exc_path"].nxdata]
 
         return [x.decode('utf-8') for x in path_array]
 
