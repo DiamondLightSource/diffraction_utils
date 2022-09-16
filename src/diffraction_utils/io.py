@@ -486,9 +486,19 @@ class I07Nexus(NexusBase):
             "dpsx", "dpsy", "dpsz", "dpsz2"  # DPS values.
         ]
 
-        motor_names_eh2 = [
+        # For some reason, in at least one nexus file I've seen these names.
+        # These are kept in case they are needed for a dodgy nexus file in
+        # the future.
+        # pylint: disable=unused-variable
+        motor_names_eh2_fourc = [
             "fourc.diff2delta", "fourc.diff2gamma",  # Basic motors.
             "fourc.diff2omega", "fourc.diff2alpha"  # Basic motors.
+        ]
+
+        # The motors of interest in eh2.
+        motor_names_eh2 = [
+            "diff2delta", "diff2gamma",  # Basic motors.
+            "diff2omega", "diff2alpha"  # Basic motors.
         ]
 
         # Correct the motor names if we're in experimental hutch 2.
