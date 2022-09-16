@@ -52,6 +52,25 @@ class MissingMetadataWarning(UserWarning):
     """
 
 
+def _get_utf_8(string_like):
+    """
+    Takes something that might be a string, or might be something that we can
+    decode into a utf-8 string. Tries to decode it as a utf-8 string.
+
+    This function will raise a ValueError if it is passed something that isn't
+    a string, at that cannot be decoded as a string.
+    """
+    # pylint: disable=raise-missing-from
+    try:
+        string_like = string_like.decode('utf-8')
+    except AttributeError:
+        if not isinstance(string_like, str):
+            raise ValueError(
+                "string_like object must be a string, or be able to be "
+                f"decoded into a string. Instead got {string_like}.")
+    return string_like
+
+
 def warn_missing_metadata(func):
     """
     Wrap _parse functions with this to make them non-essential. If a parser's
@@ -120,6 +139,11 @@ class NexusBase(DataFileBase):
         """
         Returns the list of scan fields contained within the diamond scan.
         """
+        # As of 09/2022, these are no longer guaranteed to be in a .nxs file,
+        # so lets explicitly check and return an empty list if it's missing.
+        if "scan_fields" not in self.diamond_scan:
+            return []
+
         # Some explicit string casts in case these are byte arrays.
         try:
             return [x.decode('utf-8')
@@ -339,6 +363,16 @@ class I07Nexus(NexusBase):
         for field in self.scan_fields:
             if field.startswith('diff1'):
                 return True
+
+        # As of 09/2022, scan_fields may not be populated, in which case it's
+        # an empty list in this code. Instead lets look for keys in the detector
+        # that begin with diff1.
+        for key in self.nx_entry[self.detector_name]:
+            # Make sure that the key is utf-8.
+            key = _get_utf_8(key)
+            if key.startswith('diff1'):
+                return True
+
         return False
 
     @property
@@ -351,9 +385,18 @@ class I07Nexus(NexusBase):
         # you're scanning something in ehN, you're bound to have at least one
         # scan field starting with 'diffN' because of how everything is named.
         for field in self.scan_fields:
-            print(field)
             if field.startswith('diff2'):
                 return True
+
+        # As of 09/2022, scan_fields may not be populated, in which case it's
+        # an empty list in this code. Instead lets look for keys in the detector
+        # that begin with diff2.
+        for key in self.nx_entry[self.detector_name]:
+            # Make sure that the key is utf-8.
+            key = _get_utf_8(key)
+            if key.startswith('diff2'):
+                return True
+
         return False
 
     @property
