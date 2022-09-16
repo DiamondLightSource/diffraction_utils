@@ -604,7 +604,10 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the delta values throughout the scan.
         """
         if self.is_eh2:
-            return self.motors["fourc.diff2delta"]
+            try:
+                return self.motors["diff2delta"]
+            except KeyError:
+                return self.motors["fourc.diff2delta"]
         return self.motors["diff1delta"]
 
     def _parse_gamma(self) -> np.ndarray:
@@ -612,7 +615,10 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the gamma values throughout the scan.
         """
         if self.is_eh2:
-            return self.motors["fourc.diff2gamma"]
+            try:
+                return self.motors["diff2gamma"]
+            except KeyError:
+                return self.motors["fourc.diff2gamma"]
         return self.motors["diff1gamma"]
 
     def _parse_omega(self) -> np.ndarray:
@@ -620,7 +626,10 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the omega values throughout the scan.
         """
         if self.is_eh2:
-            return self.motors["fourc.diff2omega"]
+            try:
+                return self.motors["diff2omega"]
+            except KeyError:
+                return self.motors["fourc.diff2omega"]
         return self.motors["diff1omega"]
 
     def _parse_alpha(self) -> np.ndarray:
@@ -628,7 +637,10 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the alpha values throughout the scan.
         """
         if self.is_eh2:
-            return self.motors["fourc.diff2alpha"]
+            try:
+                return self.motors["diff2alpha"]
+            except KeyError:
+                return self.motors["fourc.diff2alpha"]
         return self.motors["diff1alpha"]
 
     def _parse_theta(self) -> np.ndarray:
