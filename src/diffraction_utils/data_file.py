@@ -344,8 +344,9 @@ def _try_to_find_files(filenames: List[str],
         # If we didn't find the file, tell the user.
         if not found_file:
             raise FileNotFoundError(
-                "The data file with the name " + filenames[i] + " could "
-                "not be found. The following paths were searched:\n" +
-                "\n".join(candidate_paths)
+                f"The data file with the name {filenames[i]} could "
+                "not be found."
+                f"Arguments passed were: filenames: {filenames} and "
+                f"additional_search_paths: {additional_search_paths}."
             )
     return found_files
