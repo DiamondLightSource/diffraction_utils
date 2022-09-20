@@ -86,7 +86,7 @@ def warn_missing_metadata(func):
     def inner_function(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except nx.NeXusError:
+        except (nx.NeXusError, KeyError) as _:
             warn(MissingMetadataWarning(
                 f"{func.__name__} failed to parse a value, so its value will "
                 "default to None."))
@@ -274,6 +274,7 @@ class I07Nexus(NexusBase):
     pilatus_2021 = "pil2roi"
     pilatus_2022 = "PILATUS"
     pilatus_eh2_2022 = "pil3roi"
+    pilatus_eh2_stats = "pil3stats"
 
     # Setups.
     horizontal = "horizontal"
@@ -386,6 +387,13 @@ class I07Nexus(NexusBase):
         Works out if the experiment was carried out in experimental hutch 2
         (eh2). Returns the corresponding boolean.
         """
+        # Currently working on the assumption that 'pil3' is associated with
+        # the p100k; also assuming that the p100k is only used in eh2. Hardly
+        # bulletproof.
+        if self._parse_detector_name() in [I07Nexus.pilatus_eh2_2022,
+                                           I07Nexus.pilatus_eh2_stats]:
+            return True
+
         # This check is very basic, but at the same time, should be robust. If
         # you're scanning something in ehN, you're bound to have at least one
         # scan field starting with 'diffN' because of how everything is named.
@@ -492,6 +500,13 @@ class I07Nexus(NexusBase):
         Returns the shape of the images we expect to be recorded by this
         detector.
         """
+        # In hutch 2, currently only the pilatus 100k is used.
+        if self._is_eh2:
+            if self.is_rotated:
+                return (195, 487)
+            return (195, 487)
+
+        # In experimental hutch 1, it could be the P2M or the excalibur.
         if self.is_excalibur:
             if self.is_rotated:
                 return 2069, 515
@@ -711,6 +726,8 @@ class I07Nexus(NexusBase):
             return I07Nexus.excalibur_2022_fscan
         if "pil3roi" in self.nx_entry:
             return I07Nexus.pilatus_eh2_2022
+        if "pil3stats" in self.nx_entry:
+            return I07Nexus.pilatus_eh2_stats
 
         # Couldn't recognise the detector.
         raise NotImplementedError("Couldn't recognise detector name.")
@@ -874,7 +891,8 @@ class I07Nexus(NexusBase):
         """
         return self.detector_name in [I07Nexus.pilatus_2021,
                                       I07Nexus.pilatus_2022,
-                                      I07Nexus.pilatus_eh2_2022]
+                                      I07Nexus.pilatus_eh2_2022,
+                                      I07Nexus.pilatus_eh2_stats]
 
     @warn_missing_metadata
     def _parse_u(self) -> np.ndarray:
