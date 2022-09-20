@@ -79,9 +79,9 @@ class I07Diffractometer(DiffractometerBase):
             # in the correct order to get the U matrix:
             return alpha_rot*chi_rot*theta_rot
 
-        # If execution reaches here, we're in vertical scattering and we only
-        # need omega.
-        return omega_rot
+        # If execution reaches here, we're in vertical scattering and we need
+        # alpha and omega.
+        return alpha_rot*omega_rot
 
     def get_detector_vector(self, frame: Frame) -> Vector3:
        # The following are the axis in the lab frame when all motors are @0.
