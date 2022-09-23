@@ -346,13 +346,17 @@ class I07Nexus(NexusBase):
     def get_image(self, image_number: int) -> np.ndarray:
         img = super().get_image(image_number)
 
+        # The following used to be used to deal with broken frames in the
+        # excalibur detector, but no longer works. This is kept explicitly in
+        # case it becomes useful again in the future.
+
         # Deal with the fact that the excalibur detector always puts out some
         # bad frames.
-        if self.is_excalibur and self.has_hdf5_data:
-            bad_frames = [273, 274, 761, 762, 924, 925, 598, 599, 1087, 1088,
-                          110, 111]
-            if image_number in bad_frames:
-                return np.zeros_like(img)
+        # if self.is_excalibur and self.has_hdf5_data:
+        #     bad_frames = [273, 274, 761, 762, 924, 925, 598, 599, 1087, 1088,
+        #                   110, 111]
+        #     if image_number in bad_frames:
+        #         return np.zeros_like(img)
 
         return img
 
