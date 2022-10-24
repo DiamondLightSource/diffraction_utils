@@ -386,6 +386,27 @@ class I07Nexus(NexusBase):
 
         return img
 
+    def populate_data_from_dat(self, path_to_dat: Union[str, Path]) -> None:
+        """
+        Overrides the current values of delta, gamma, omega, theta, alpha and
+        chi with ones recorded in a .dat file.
+        """
+        # First use the .dat parsing function to grab a dataframe.
+        data_frame = i07_data_from_dat(path_to_dat)
+
+        if self.is_eh1:
+            self.delta = data_frame["diff1delta"].to_numpy()
+            self.gamma = data_frame["diff1gamma"].to_numpy()
+            self.omega = data_frame["diff1omega"].to_numpy()
+            self.theta = data_frame["diff1theta"].to_numpy()
+            self.alpha = data_frame["diff1alpha"].to_numpy()
+            self.chi = data_frame["diff1chi"].to_numpy()
+        if self.is_eh2:
+            self.delta = data_frame["diff2delta"].to_numpy()
+            self.gamma = data_frame["diff2gamma"].to_numpy()
+            self.omega = data_frame["diff2omega"].to_numpy()
+            self.alpha = data_frame["diff2alpha"].to_numpy()
+
     @property
     def _is_eh1(self) -> bool:
         """
