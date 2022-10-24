@@ -17,7 +17,6 @@ class and its children.
 # pylint: disable=fixme
 
 
-import copy
 import json
 from abc import abstractmethod
 from pathlib import Path
@@ -27,6 +26,7 @@ from warnings import warn
 
 import nexusformat.nexus.tree as nx
 import numpy as np
+import pandas as pd
 from nexusformat.nexus import nxload
 
 
@@ -91,6 +91,31 @@ def warn_missing_metadata(func):
                 f"{func.__name__} failed to parse a value, so its value will "
                 "default to None."))
     return inner_function
+
+
+def i07_data_from_dat(path_to_dat: Union[str, Path]) -> pd.DataFrame:
+    """
+    Takes a path to an i07 .dat file and uses it to grab essential data. This
+    function does not grab metadata from .dat files - that's what nexus files
+    are for. However, sometimes nexus files break and we have to fall back on
+    .dat files for reading data. This file returns a pandas dataframe containing
+    all of the data and none of the metadata.
+
+    Args:
+        path_to_dat:
+            The path to the .dat file containing the data.
+
+    Returns:
+        pandas.core.frame.DataFrame object containing all of the data in the
+        table at the bottom of the .dat file.
+    """
+    # First find the line on which the metadata ends.
+    with open(path_to_dat, 'r', encoding='utf-8') as open_dat:
+        for line_number, line in enumerate(open_dat):
+            if line.strip().endswith('&END'):
+                skip_rows = line_number + 1
+
+    return pd.read_table(path_to_dat, skiprows=skip_rows)
 
 
 class NexusBase(DataFileBase):
@@ -275,6 +300,7 @@ class I07Nexus(NexusBase):
     pilatus_2022 = "PILATUS"
     pilatus_eh2_2022 = "pil3roi"
     pilatus_eh2_stats = "pil3stats"
+    pilatus_eh2_scan = "p3r"
 
     # Setups.
     horizontal = "horizontal"
@@ -395,7 +421,8 @@ class I07Nexus(NexusBase):
         # the p100k; also assuming that the p100k is only used in eh2. Hardly
         # bulletproof.
         if self._parse_detector_name() in [I07Nexus.pilatus_eh2_2022,
-                                           I07Nexus.pilatus_eh2_stats]:
+                                           I07Nexus.pilatus_eh2_stats,
+                                           I07Nexus.pilatus_eh2_scan]:
             return True
 
         # This check is very basic, but at the same time, should be robust. If
@@ -442,7 +469,8 @@ class I07Nexus(NexusBase):
         try:
             # Try to see if our detector's data points at an h5 file.
             if isinstance(self.nx_detector["data"], nx.NXlink):
-                if self.nx_detector["data"]._filename.endswith('.h5'):
+                if self.nx_detector["data"]._filename.endswith('.h5') or \
+                        self.nx_detector["data"]._filename.endswith('.hdf5'):
                     return True
         except Exception:
             # If something went really wrong, there mustn't be .h5 data.
@@ -669,12 +697,22 @@ class I07Nexus(NexusBase):
         if self.is_eh1:
             return self.motors["diff1theta"]
 
+        # In eh2, just return a bunch of zeros. In reality, there isn't a
+        # diff2theta field, but we can equivalently represent that by an array
+        # of zeroes.
+        return np.zeros((self.scan_length,))
+
     def _parse_chi(self) -> np.ndarray:
         """
         Returns a numpy array of the chi values throughout the scan.
         """
         if self.is_eh1:
             return self.motors["diff1chi"]
+
+        # In eh2, just return a bunch of zeros. In reality, there isn't a
+        # diff2chi field, but we can equivalently represent that by an array
+        # of zeroes.
+        return np.zeros((self.scan_length,))
 
     def _parse_detector_rot(self) -> float:
         """
@@ -732,6 +770,8 @@ class I07Nexus(NexusBase):
             return I07Nexus.pilatus_eh2_2022
         if "pil3stats" in self.nx_entry:
             return I07Nexus.pilatus_eh2_stats
+        if "p3r" in self.nx_entry:
+            return I07Nexus.pilatus_eh2_scan
 
         # Couldn't recognise the detector.
         raise NotImplementedError("Couldn't recognise detector name.")
@@ -886,7 +926,8 @@ class I07Nexus(NexusBase):
         return self.detector_name in [I07Nexus.pilatus_2021,
                                       I07Nexus.pilatus_2022,
                                       I07Nexus.pilatus_eh2_2022,
-                                      I07Nexus.pilatus_eh2_stats]
+                                      I07Nexus.pilatus_eh2_stats,
+                                      I07Nexus.pilatus_eh2_scan]
 
     @warn_missing_metadata
     def _parse_u(self) -> np.ndarray:
@@ -895,8 +936,8 @@ class I07Nexus(NexusBase):
         hasn't, returns None.
         """
         # This quantity has only been determined for pilatus_2022 .nxs files.
-        if self.detector_name == self.pilatus_2022:
-            return self.nx_instrument["diffcalchdr.diffcalc_u"].value.nxdata
+        # This may result in some warnings when reading older data.
+        return self.nx_instrument["diffcalchdr.diffcalc_u"].value.nxdata
 
     @warn_missing_metadata
     def _parse_ub(self) -> np.ndarray:
@@ -905,9 +946,8 @@ class I07Nexus(NexusBase):
         hasn't, returns None.
         """
         # This quantity has only been determined for pilatus_2022 .nxs files.
-        if self.detector_name in [self.pilatus_2022,
-                                  I07Nexus.excalibur_2022_fscan]:
-            return self.nx_instrument["diffcalchdr.diffcalc_ub"].value.nxdata
+        # This may result in some warnings when reading older data.
+        return self.nx_instrument["diffcalchdr.diffcalc_ub"].value.nxdata
 
 
 class I10Nexus(NexusBase):
