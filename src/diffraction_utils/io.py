@@ -413,6 +413,9 @@ class I07Nexus(NexusBase):
         """
         Works out if the experiment was carried out in experimental hutch 1
         (eh1). Returns the corresponding boolean.
+
+        This information should really be written in the .nxs file, but since
+        it isn't we need this kind of hacky workaround.
         """
         # This check is very basic, but at the same time, should be robust. If
         # you're scanning something in ehN, you're bound to have at least one
@@ -430,6 +433,14 @@ class I07Nexus(NexusBase):
             key = _get_utf_8(key)
             if key.startswith('diff1'):
                 return True
+
+        # After digging through IOC's, we saw that if the detector name starts
+        # with pil2 it's most likely the P2M, which would be very difficult to
+        # use in EH2. So, let's run a check against this too.
+        if self.detector_name.startswith("pil2"):
+            return True
+        if self.detector_name.startswith("p2"):
+            return True
 
         return False
 
