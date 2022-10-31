@@ -298,6 +298,7 @@ class I07Nexus(NexusBase):
     excalibur_2022_fscan = "EXCALIBUR"
     pilatus_2021 = "pil2roi"
     pilatus_2022 = "PILATUS"
+    pilatus_2_stats = "pil2stats"
     pilatus_eh2_2022 = "pil3roi"
     pilatus_eh2_stats = "pil3stats"
     pilatus_eh2_scan = "p3r"
@@ -785,6 +786,8 @@ class I07Nexus(NexusBase):
             return I07Nexus.pilatus_2021
         if "PILATUS" in self.nx_entry:
             return I07Nexus.pilatus_2022
+        if "pil2stats" in self.nx_entry:
+            return I07Nexus.pilatus_2_stats
         if "EXCALIBUR" in self.nx_entry:
             return I07Nexus.excalibur_2022_fscan
         if "pil3roi" in self.nx_entry:
@@ -794,8 +797,15 @@ class I07Nexus(NexusBase):
         if "p3r" in self.nx_entry:
             return I07Nexus.pilatus_eh2_scan
 
+        # pylint: disable=invalid-name
+        class GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(Exception):
+            """
+            Extra special exception to raise when the detector name changes.
+            """
+
         # Couldn't recognise the detector.
-        raise NotImplementedError("Couldn't recognise detector name.")
+        raise GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(
+            "Your detector changed name again...")
 
     @warn_missing_metadata
     def _parse_signal_regions(self) -> List[Region]:
@@ -804,8 +814,11 @@ class I07Nexus(NexusBase):
         Currently there is nothing better to do than assume that this is a list
         of length 1.
         """
+        # This handles the fact that ROIs used to be stored in a completely
+        # different way.
         if self.detector_name == I07Nexus.excalibur_detector_2021:
             return [self._get_ith_region(i=1)]
+        # This attempts to parse an invalid json file.
         if self.detector_name == I07Nexus.excalibur_04_2022:
             # Make sure our code executes for bytes and strings.
             try:
@@ -946,6 +959,7 @@ class I07Nexus(NexusBase):
         """
         return self.detector_name in [I07Nexus.pilatus_2021,
                                       I07Nexus.pilatus_2022,
+                                      I07Nexus.pilatus_2_stats,
                                       I07Nexus.pilatus_eh2_2022,
                                       I07Nexus.pilatus_eh2_stats,
                                       I07Nexus.pilatus_eh2_scan]
