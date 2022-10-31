@@ -970,7 +970,6 @@ class I07Nexus(NexusBase):
         Parses the UB matrix from a .nxs file, if it has been stored. If it
         hasn't, returns None.
         """
-        # This quantity has only been determined for pilatus_2022 .nxs files.
         # This may result in some warnings when reading older data.
         return self.nx_instrument["diffcalchdr.diffcalc_u"].value.nxdata
 
@@ -980,7 +979,6 @@ class I07Nexus(NexusBase):
         Parses the UB matrix from a .nxs file, if it has been stored. If it
         hasn't, returns None.
         """
-        # This quantity has only been determined for pilatus_2022 .nxs files.
         # This may result in some warnings when reading older data.
         return self.nx_instrument["diffcalchdr.diffcalc_ub"].value.nxdata
 
