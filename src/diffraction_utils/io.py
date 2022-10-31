@@ -761,28 +761,28 @@ class I07Nexus(NexusBase):
         Returns the x-value of the DPS system.
         """
         if self.is_eh1:
-            return self.motors["dpsx"][0]
+            return self.motors["dpsx"]
 
     def _parse_dpsy(self) -> np.ndarray:
         """
         Returns the y-value of the DPS system.
         """
         if self.is_eh1:
-            return self.motors["dpsy"][0]
+            return self.motors["dpsy"]
 
     def _parse_dpsz(self) -> np.ndarray:
         """
         Returns the z-value of the DPS system.
         """
         if self.is_eh1:
-            return self.motors["dpsz"][0]
+            return self.motors["dpsz"]
 
     def _parse_dpsz2(self) -> np.ndarray:
         """
         Returns the z2-value of the DPS system.
         """
         if self.is_eh1:
-            return self.motors["dpsz2"][0]
+            return self.motors["dpsz2"]
 
     def _parse_detector_name(self) -> str:
         """
