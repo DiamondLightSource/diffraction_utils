@@ -291,6 +291,13 @@ class I07Nexus(NexusBase):
     """
     This class extends NexusBase with methods useful for scraping information
     from nexus files produced at the I07 beamline at Diamond.
+
+    Attrs:
+        using_dps:
+            A boolean representing whether or not the detector positioning
+            system (usually called the DPS system) was in use. This cannot be
+            found from the nexus file, since often DPS values will be recorded
+            even when it isn't in use.
     """
     # Detectors.
     excalibur_detector_2021 = "excroi"
@@ -313,7 +320,11 @@ class I07Nexus(NexusBase):
                  local_data_path: Union[str, Path] = '',
                  detector_distance=None,
                  setup: str = 'horizontal',
-                 locate_local_data=True):
+                 locate_local_data=True,
+                 using_dps=False):
+        # We can store whether we're using the dps system right away.
+        self.using_dps = using_dps
+
         # We need to know what detector we're using before doing any further
         # initialization.
         self.nxfile = nxload(local_path)
@@ -683,6 +694,12 @@ class I07Nexus(NexusBase):
         """
         Returns a numpy array of the delta values throughout the scan.
         """
+        # Force set this to zero if we're using the DPS system. This is
+        # important, because moving the diffractometer arm out of the way for
+        # dps experiments means that this often ends up at around 90 degrees!
+        if self.using_dps:
+            return np.zeros((self.scan_length,))
+
         if self.is_eh2:
             try:
                 return self.motors["diff2delta"]
@@ -694,6 +711,12 @@ class I07Nexus(NexusBase):
         """
         Returns a numpy array of the gamma values throughout the scan.
         """
+        # Force set this to zero if we're using the DPS system. This is
+        # important, because moving the diffractometer arm out of the way for
+        # dps experiments means that this could take any value!
+        if self.using_dps:
+            return np.zeros((self.scan_length,))
+
         if self.is_eh2:
             try:
                 return self.motors["diff2gamma"]
@@ -758,31 +781,31 @@ class I07Nexus(NexusBase):
 
     def _parse_dpsx(self) -> np.ndarray:
         """
-        Returns the x-value of the DPS system.
+        Returns the x-value of the DPS system. Division by 1e3 converts to m.
         """
         if self.is_eh1:
-            return self.motors["dpsx"]
+            return self.motors["dpsx"]/1e3
 
     def _parse_dpsy(self) -> np.ndarray:
         """
-        Returns the y-value of the DPS system.
+        Returns the y-value of the DPS system. Division by 1e3 converts to m.
         """
         if self.is_eh1:
-            return self.motors["dpsy"]
+            return self.motors["dpsy"]/1e3
 
     def _parse_dpsz(self) -> np.ndarray:
         """
-        Returns the z-value of the DPS system.
+        Returns the z-value of the DPS system. Division by 1e3 converts to m.
         """
         if self.is_eh1:
-            return self.motors["dpsz"]
+            return self.motors["dpsz"]/1e3
 
     def _parse_dpsz2(self) -> np.ndarray:
         """
-        Returns the z2-value of the DPS system.
+        Returns the z2-value of the DPS system. Division by 1e3 converts to m.
         """
         if self.is_eh1:
-            return self.motors["dpsz2"]
+            return self.motors["dpsz2"]/1e3
 
     def _parse_detector_name(self) -> str:
         """
