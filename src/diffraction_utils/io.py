@@ -293,6 +293,21 @@ class I07Nexus(NexusBase):
     from nexus files produced at the I07 beamline at Diamond.
 
     Attrs:
+        local_path:
+            The local path to the .nxs (metadata) file.
+        local_data_path:
+            The local path to the data.
+        detector_distance:
+            The distance between the sample and the detector, or between the
+            slit and the detector in DCD geometry.
+        setup:
+            The scattering geometry. Can be "horizontal", "vertical" or "DCD".
+            This will default to "vertical" if the experiment is detected to
+            have taken place in EH2.
+        local_data_path:
+            The local path to data pointed at by this file. Defaults to ''.
+            This is particularly important when the data file points to image
+            data.
         using_dps:
             A boolean representing whether or not the detector positioning
             system (usually called the DPS system) was in use. This cannot be
