@@ -32,6 +32,7 @@ class Frame:
     sample_holder = 'sample holder'
     hkl = 'hkl'
     lab = 'lab'
+    qpar_qperp = 'qpar_qperp'
     cartesian = 'cartesian'
     polar = 'polar'
 
