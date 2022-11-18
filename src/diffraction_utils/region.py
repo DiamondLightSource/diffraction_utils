@@ -3,6 +3,8 @@ This module defines the Region object, whose instances define regions of
 interest in images.
 """
 
+import numpy as np
+
 
 class Region:
     """
@@ -44,6 +46,16 @@ class Region:
         returns the number of pixels in the region.
         """
         return self.x_length * self.y_length
+
+    @property
+    def slice(self):
+        """
+        Returns an object that can be used to slice numpy arrays to exactly this
+        region.
+        """
+        x_end = self.x_end + 1
+        y_end = self.y_end + 1
+        return np.s_[self.x_start:x_end, self.y_start:y_end]
 
     @classmethod
     def from_dict(cls, region_dict: dict):
