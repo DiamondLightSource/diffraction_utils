@@ -53,9 +53,9 @@ class Region:
         Returns an object that can be used to slice numpy arrays to exactly this
         region.
         """
-        if x_end >= 0:
+        if self.x_end >= 0:
             x_end = self.x_end + 1
-        if y_end >= 0:
+        if self.y_end >= 0:
             y_end = self.y_end + 1
         return np.s_[self.x_start:x_end, self.y_start:y_end]
 
