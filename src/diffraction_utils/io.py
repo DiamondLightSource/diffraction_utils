@@ -689,10 +689,12 @@ class I07Nexus(NexusBase):
         Proportional to the fraction of probe particles allowed by an attenuator
         to strike the sample.
         """
-        try:
+        if "filterset" in self.nx_instrument:
             return float(self.nx_instrument.filterset.transmission)
-        except nx.NeXusError:
+        if "fatt" in self.nx_instrument:
             return self.nx_instrument.fatt.transmission.nxdata
+        if "fattFilters" in self.nx_instrument:
+            return self.nx_instrument.fattFilters.value.nxdata
 
     def _parse_dcd_circle_radius(self) -> float:
         """
