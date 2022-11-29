@@ -12,13 +12,6 @@ class Region:
     """
 
     def __init__(self, x_start, x_end, y_start, y_end):
-
-        # Make sure that x_end > x_start, etc.
-        if x_end < x_start:
-            x_start, x_end = x_end, x_start
-        if y_end < y_start:
-            y_start, y_end = y_end, y_start
-
         # These may be recorded as types other than int, but we really want
         # these to be integers so they can be used to index objects.
         self.x_start = int(x_start)
