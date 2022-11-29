@@ -55,8 +55,12 @@ class Region:
         """
         if self.x_end >= 0:
             x_end = self.x_end + 1
+        elif self.x_end == -1:
+            x_end = int(1e100)
         if self.y_end >= 0:
             y_end = self.y_end + 1
+        elif self.y_end == -1:
+            self.y_end = int(1e100)
         return np.s_[self.x_start:x_end, self.y_start:y_end]
 
     @classmethod
