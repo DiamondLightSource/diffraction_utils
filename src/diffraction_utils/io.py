@@ -639,7 +639,7 @@ class I07Nexus(NexusBase):
         """
         motor_names = [
             "diff1delta", "diff1gamma", "diff1omega",  # Basic motors.
-            "diff1theta", "diff1alpha", "diff1chi",  # Basic motors.
+            "diff1theta", "diff1chi",  # Basic motors.
             "dcdomega", "dcdc2rad", "diff1prot",  # DCD values.
             "dpsx", "dpsy", "dpsz", "dpsz2"  # DPS values.
         ]
@@ -763,7 +763,10 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2alpha"]
             except KeyError:
                 return self.motors["fourc.diff2alpha"]
-        return self.motors["diff1alpha"]
+        try:
+            return self.motors["diff1alpha"]
+        except KeyError:
+            return np.zeros((self.scan_length))
 
     def _parse_theta(self) -> np.ndarray:
         """
