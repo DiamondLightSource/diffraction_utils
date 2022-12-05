@@ -65,6 +65,7 @@ class DataFileBase(ABC):
         self.default_signal_name = self._parse_default_signal_name()
         self.default_axis = self._parse_default_axis()
         self.default_signal = self._parse_default_signal()
+        self.scan_length = self._parse_scan_length()
 
         # Do the image specific initialization.
         if self.has_image_data:
@@ -137,8 +138,7 @@ class DataFileBase(ABC):
         """
         raise NotImplementedError()
 
-    @property
-    def scan_length(self) -> int:
+    def _parse_scan_length(self) -> int:
         """
         Returns the number of data points collected during this scan.
         """
