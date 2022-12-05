@@ -411,10 +411,8 @@ class I07Nexus(NexusBase):
         """
         meta_dict = {
             'probe_energy': self.probe_energy,
-            'local_hdf5_path': self.local_hdf5_path,
             'local_path': self.local_path,
             'local_data_path': self.local_data_path,
-            'raw_image_paths': self.raw_image_paths,
             'scan_length': self.scan_length
         }
         if self.has_image_data:
