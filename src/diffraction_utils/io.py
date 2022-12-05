@@ -396,6 +396,76 @@ class I07Nexus(NexusBase):
         if self.is_excalibur:
             self.signal_regions = self._parse_signal_regions()
 
+    def update_metadata(self, new_metadata: dict):
+        """
+        Updates various essential bits of metadata that will change this nexus
+        file to represent another in what would be a series of scans.
+        """
+        for metadata_key in new_metadata:
+            setattr(self, metadata_key, new_metadata[metadata_key])
+
+    def get_metadata(self):
+        """
+        Returns various essential bits of metadata that will be needed to
+        specify this scan amongst other similar scans.
+        """
+        meta_dict = {
+            'probe_energy': self.probe_energy,
+            'local_hdf5_path': self.local_hdf5_path,
+            'local_path': self.local_path,
+            'local_data_path': self.local_data_path,
+            'raw_image_paths': self.raw_image_paths,
+            'scan_length': self.scan_length
+        }
+        if self.has_image_data:
+            if self.has_hdf5_data:
+                meta_dict['hdf5_internal_path'] = self.hdf5_internal_path
+                meta_dict['raw_hdf5_path'] = self.raw_hdf5_path
+                meta_dict['local_hdf5_path'] = self.local_hdf5_path
+            else:
+                meta_dict['raw_image_paths'] = self.raw_image_paths
+                meta_dict['local_image_paths'] = self.local_image_paths
+
+        return meta_dict
+
+    def update_motors(self, new_motors: Dict[str, np.ndarray]):
+        """
+        Updates the motor positions of this I07Nexus object. Takes as an
+        argument a dictionary of new motor positions that takes the form:
+
+            {'theta': [1,2,3...], 'omega': [4,4,4...], ...}
+        """
+        scan_lengths = []
+        for motor in new_motors:
+            setattr(self, motor, new_motors[motor])
+            if motor == 'transmission':
+                continue
+            new_motor_values = np.array(new_motors[motor])
+            scan_lengths.append(len(new_motor_values))
+
+        # Do some sanity checking. Make sure that each scan length is the same.
+        if np.std(scan_lengths) != 0:
+            raise ValueError(
+                "new_motors' values must all be arrays of the same length.")
+
+    def get_motors(self):
+        """Returns all the motor positions (for use with update_motors)."""
+        return {
+            'transmission': self.transmission,
+            'dcd_circle_radius': self.dcd_circle_radius,
+            'dcd_omega': self.dcd_omega,
+            'delta': self.delta,
+            'gamma': self.gamma,
+            'omega': self.omega,
+            'theta': self.theta,
+            'alpha': self.alpha,
+            'chi': self.chi,
+            'dpsx': self.dpsx,
+            'dpsy': self.dpsy,
+            'dpsz': self.dpsz,
+            'dpsz2': self.dpsz2
+        }
+
     def get_image(self, image_number: int) -> np.ndarray:
         img = super().get_image(image_number)
 
