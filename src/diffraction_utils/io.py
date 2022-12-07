@@ -413,6 +413,7 @@ class I07Nexus(NexusBase):
             'probe_energy': self.probe_energy,
             'local_path': self.local_path,
             'local_data_path': self.local_data_path,
+            'dcd_circle_radius': self.dcd_circle_radius,
             'scan_length': self.scan_length
         }
         if self.has_image_data:
@@ -433,24 +434,13 @@ class I07Nexus(NexusBase):
 
             {'theta': [1,2,3...], 'omega': [4,4,4...], ...}
         """
-        scan_lengths = []
         for motor in new_motors:
             setattr(self, motor, new_motors[motor])
-            if motor == 'transmission':
-                continue
-            new_motor_values = np.array(new_motors[motor])
-            scan_lengths.append(len(new_motor_values))
-
-        # Do some sanity checking. Make sure that each scan length is the same.
-        if np.std(scan_lengths) != 0:
-            raise ValueError(
-                "new_motors' values must all be arrays of the same length.")
 
     def get_motors(self):
         """Returns all the motor positions (for use with update_motors)."""
         return {
             'transmission': self.transmission,
-            'dcd_circle_radius': self.dcd_circle_radius,
             'dcd_omega': self.dcd_omega,
             'delta': self.delta,
             'gamma': self.gamma,
