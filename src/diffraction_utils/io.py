@@ -731,14 +731,14 @@ class I07Nexus(NexusBase):
             # This could be a link to the data, a single value or a numpy array
             # containing varying values. We need to handle all three cases. The
             # last two cases are handled by multiplying by an array of ones.
-            if "value" in dir(self.nx_instrument[name]):
-                motors_dict[name] = self.nx_instrument[name].value.nxdata*ones
-            elif "value_set" in dir(self.nx_instrument[name]):
+            if "value_set" in dir(self.nx_instrument[name]):
                 motors_dict[name] = \
                     self.nx_instrument[name].value_set.nxlink.nxdata
                 if motors_dict[name] is None:
                     motors_dict[name] = \
                         self.nx_instrument[name].value_set.nxlink.nxdata
+            elif "value" in dir(self.nx_instrument[name]):
+                motors_dict[name] = self.nx_instrument[name].value.nxdata*ones
         return motors_dict
 
     @warn_missing_metadata
