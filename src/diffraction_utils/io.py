@@ -482,9 +482,15 @@ class I07Nexus(NexusBase):
         if self.is_eh1:
             self.delta = data_frame["diff1delta"].to_numpy()
             self.gamma = data_frame["diff1gamma"].to_numpy()
-            self.omega = data_frame["diff1omega"].to_numpy()
+            try:
+                self.omega = data_frame["diff1omega"].to_numpy()
+            except KeyError:
+                self.omega = np.zeros_like(self.delta)
             self.theta = data_frame["diff1theta"].to_numpy()
-            self.alpha = data_frame["diff1alpha"].to_numpy()
+            try:
+                self.alpha = data_frame["diff1alpha"].to_numpy()
+            except KeyError:
+                self.alpha = np.zeros_like(self.delta)
             self.chi = data_frame["diff1chi"].to_numpy()
         if self.is_eh2:
             self.delta = data_frame["diff2delta"].to_numpy()
