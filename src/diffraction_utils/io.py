@@ -324,6 +324,7 @@ class I07Nexus(NexusBase):
     pilatus_eh2_2022 = "pil3roi"
     pilatus_eh2_stats = "pil3stats"
     pilatus_eh2_scan = "p3r"
+    p2r = "p2r"
 
     # Setups.
     horizontal = "horizontal"
@@ -913,6 +914,8 @@ class I07Nexus(NexusBase):
             return I07Nexus.pilatus_2022
         if "pil2stats" in self.nx_entry:
             return I07Nexus.pilatus_2_stats
+        if "p2r" in self.nx_entry:
+            return I07Nexus.p2r
         if "EXCALIBUR" in self.nx_entry:
             return I07Nexus.excalibur_2022_fscan
         if "pil3roi" in self.nx_entry:
@@ -937,6 +940,8 @@ class I07Nexus(NexusBase):
             return I07Nexus.pilatus_2022
         if "pil2stats" in self.nx_entry.NXinstrument[0]:
             return I07Nexus.pilatus_2_stats
+        if "p2r" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.p2r
         if "EXCALIBUR" in self.nx_entry.NXinstrument[0]:
             return I07Nexus.excalibur_2022_fscan
         if "pil3roi" in self.nx_entry.NXinstrument[0]:
