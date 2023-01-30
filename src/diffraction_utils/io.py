@@ -344,12 +344,14 @@ class I07Nexus(NexusBase):
         # initialization.
         self.nxfile = nxload(local_path)
         self.nx_entry = self._parse_nx_entry()
+        self.detector_name = self._parse_detector_name()
+
+        # Initially, just set the detector rotation to be 0. This will be parsed
+        # properly later, but some value is needed to run super().__init__()
+        self.det_rot = 0
 
         # Now we can call super().__init__
         super().__init__(local_path, local_data_path, locate_local_data)
-
-        # Grab the detector name.
-        self.detector_name = self._parse_detector_name()
 
         # Work out which experimental hutch this was carried out in.
         self.is_eh1 = self._is_eh1
@@ -901,27 +903,51 @@ class I07Nexus(NexusBase):
         Returns the name of the detector that we're using. Because life sucks,
         this is a function of time.
         """
-        detector_name = str(self.nx_detector)
-        if "excroi" == detector_name:
+        if "excroi" in self.nx_entry:
             return I07Nexus.excalibur_detector_2021
-        if "exr" == detector_name:
+        if "exr" in self.nx_entry:
             return I07Nexus.excalibur_04_2022
-        if "pil2roi" == detector_name:
+        if "pil2roi" in self.nx_entry:
             return I07Nexus.pilatus_2021
-        if "PILATUS" == detector_name:
+        if "PILATUS" in self.nx_entry:
             return I07Nexus.pilatus_2022
-        if "pil2stats" == detector_name:
+        if "pil2stats" in self.nx_entry:
             return I07Nexus.pilatus_2_stats
-        if "EXCALIBUR" == detector_name:
+        if "EXCALIBUR" in self.nx_entry:
             return I07Nexus.excalibur_2022_fscan
-        if "pil3roi" == detector_name:
+        if "pil3roi" in self.nx_entry:
             return I07Nexus.pilatus_eh2_2022
-        if "pil3stats" == detector_name:
+        if "pil3stats" in self.nx_entry:
             return I07Nexus.pilatus_eh2_stats
-        if "p3r" == detector_name:
+        if "p3r" in self.nx_entry:
+            return I07Nexus.pilatus_eh2_scan
+
+        # If execution reached here, then the entry is (for some reason) missing
+        # the detector name. Lets check all the NXdetectors and hope that one of
+        # them has a known name. Note that these should *NOT* be combined with
+        # the previous if statements. Entry should be checked first, then the
+        # NXinstrument.
+        if "excroi" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.excalibur_detector_2021
+        if "exr" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.excalibur_04_2022
+        if "pil2roi" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.pilatus_2021
+        if "PILATUS" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.pilatus_2022
+        if "pil2stats" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.pilatus_2_stats
+        if "EXCALIBUR" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.excalibur_2022_fscan
+        if "pil3roi" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.pilatus_eh2_2022
+        if "pil3stats" in self.nx_entry.NXinstrument[0]:
+            return I07Nexus.pilatus_eh2_stats
+        if "p3r" in self.nx_entry.NXinstrument[0]:
             return I07Nexus.pilatus_eh2_scan
 
         # pylint: disable=invalid-name
+
         class GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(Exception):
             """
             Extra special exception to raise when the detector name changes.
