@@ -1115,6 +1115,7 @@ class I07Nexus(NexusBase):
         return self.detector_name in [I07Nexus.pilatus_2021,
                                       I07Nexus.pilatus_2022,
                                       I07Nexus.pilatus_2_stats,
+                                      I07Nexus.p2r,
                                       I07Nexus.pilatus_eh2_2022,
                                       I07Nexus.pilatus_eh2_stats,
                                       I07Nexus.pilatus_eh2_scan]
