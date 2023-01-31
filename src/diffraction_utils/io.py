@@ -397,6 +397,11 @@ class I07Nexus(NexusBase):
         if self.is_excalibur:
             self.signal_regions = self._parse_signal_regions()
 
+        # Work out which images that have been collected should be ignored.
+        # This can happen, for example, if the attenuation filters are moving.
+        self.ignore_images = []
+        self.ignore_images.extend(self._parse_attenuation_filters_moving())
+
     def update_metadata(self, new_metadata: dict):
         """
         Updates various essential bits of metadata that will change this nexus
@@ -619,6 +624,23 @@ class I07Nexus(NexusBase):
         if not (self.is_eh1 or self.is_eh2):
             raise BadNexusFileError(
                 "This nexus file didn't seem to belong to eh1 or eh2.")
+
+    @warn_missing_metadata
+    def _parse_attenuation_filters_moving(self):
+        """
+        Attempts to parse whether attenuation filters are moving.
+        Note that this is FRAGILE. This will break if either of
+        EXCALIBUR_transmission
+        or
+        attenuation_filters_moving
+        change name.
+        """
+        filters_moving = self.nx_entry[
+            "EXCALIBUR_transmission/attenuation_filters_moving"].nxdata
+        ignore_images = [
+            x for x, num in enumerate(filters_moving) if num == 1
+        ]
+        return ignore_images
 
     @warn_missing_metadata
     def _parse_hdf5_internal_path(self) -> str:
