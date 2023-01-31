@@ -415,7 +415,8 @@ class I07Nexus(NexusBase):
             'local_path': self.local_path,
             'local_data_path': self.local_data_path,
             'dcd_circle_radius': self.dcd_circle_radius,
-            'scan_length': self.scan_length
+            'scan_length': self.scan_length,
+            'has_hdf5_data': self.has_hdf5_data,
         }
         if self.has_image_data:
             if self.has_hdf5_data:
@@ -587,8 +588,7 @@ class I07Nexus(NexusBase):
         """
         return True
 
-    @property
-    def has_hdf5_data(self) -> bool:
+    def _parse_has_hdf5_data(self) -> bool:
         """
         Currently seems like a reasonable way of determining this.
         """
@@ -1178,8 +1178,7 @@ class I10Nexus(NexusBase):
         """For now, assume all i10 data we're given is image data."""
         return True
 
-    @property
-    def has_hdf5_data(self) -> bool:
+    def _parse_has_hdf5_data(self) -> bool:
         """As of 31/05/2022, i10 does not output hdf5 data, only .tiffs."""
         return False
 

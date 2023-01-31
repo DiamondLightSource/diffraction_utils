@@ -66,6 +66,7 @@ class DataFileBase(ABC):
         self.default_axis = self._parse_default_axis()
         self.default_signal = self._parse_default_signal()
         self.scan_length = self._parse_scan_length()
+        self.has_hdf5_data = self._parse_has_hdf5_data()
 
         # Do the image specific initialization.
         if self.has_image_data:
@@ -153,9 +154,8 @@ class DataFileBase(ABC):
         if not self.has_hdf5_data:
             raise NoHdf5Error()
 
-    @property
     @abstractmethod
-    def has_hdf5_data(self) -> bool:
+    def _parse_has_hdf5_data(self) -> bool:
         """
         Returns whether or not this data file points to some hdf5 data.
         """
