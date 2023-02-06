@@ -84,7 +84,7 @@ class I07Diffractometer(DiffractometerBase):
         return alpha_rot*omega_rot
 
     def get_detector_vector(self, frame: Frame) -> Vector3:
-       # The following are the axis in the lab frame when all motors are @0.
+        # The following are the axis in the lab frame when all motors are @0.
         gamma_axis = np.array([0, 1, 0])
         delta_axis = np.array([-1, 0, 0])
 
@@ -125,8 +125,8 @@ class I07Diffractometer(DiffractometerBase):
         crystal to the sample.
         """
         # First get the displacement between the beam from the synchrotron and
-        # the 2nd crystal in the DCD setup.
-        omega = self.data_file.dcd_omega
+        # the 2nd crystal in the DCD setup. Note that we need to convert to rad.
+        omega = self.data_file.dcd_omega * np.pi/180
         beam_crystal_vector = np.array([np.cos(omega), np.sin(omega), 0])
         beam_crystal_vector *= self.data_file.dcd_circle_radius
 
