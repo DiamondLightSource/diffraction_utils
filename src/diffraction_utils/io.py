@@ -541,7 +541,7 @@ class I07Nexus(NexusBase):
 
         # Similarly, it's very likely that the experiment is in EH1 if the
         # excalibur detector is being used.
-        if self.detector_name.lower().startswith("ex"):
+        if self.is_excalibur:
             return True
 
         return False
