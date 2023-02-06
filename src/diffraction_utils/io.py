@@ -518,6 +518,11 @@ class I07Nexus(NexusBase):
         # you're scanning something in ehN, you're bound to have at least one
         # scan field starting with 'diffN' because of how everything is named.
         for field in self.scan_fields:
+            # This is not redundant. Users could forget to remove diff2 fields
+            # but prepend diff1 to their scan fields. In this case, we should
+            # return the truthiness of the first scan field we come across.
+            if field.startswith('diff2'):
+                return False
             if field.startswith('diff1'):
                 return True
 
@@ -564,6 +569,11 @@ class I07Nexus(NexusBase):
         # you're scanning something in ehN, you're bound to have at least one
         # scan field starting with 'diffN' because of how everything is named.
         for field in self.scan_fields:
+            # This is not redundant. Users could forget to remove diff2 fields
+            # but prepend diff1 to their scan fields. In this case, we should
+            # return the truthiness of the first scan field we come across.
+            if field.startswith('diff1'):
+                return False
             if field.startswith('diff2'):
                 return True
 
