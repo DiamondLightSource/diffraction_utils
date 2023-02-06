@@ -400,7 +400,9 @@ class I07Nexus(NexusBase):
         # Work out which images that have been collected should be ignored.
         # This can happen, for example, if the attenuation filters are moving.
         self.ignore_images = []
-        self.ignore_images.extend(self._parse_attenuation_filters_moving())
+        filters_moving_frames = self._parse_attenuation_filters_moving()
+        if filters_moving_frames is not None:
+            self.ignore_images.extend(filters_moving_frames)
 
     def update_metadata(self, new_metadata: dict):
         """
