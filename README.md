@@ -10,3 +10,15 @@ calculated at runtime from input arguments.
 
 In the code, U matrices are referred to as "orientation matrices", while B
 matrices are "goniometer matrices".
+
+# Installation
+
+To install, first install all the requirements listed in requirements.txt using
+your favourite python package manager. Then you can install diffraction_utils.
+
+Something like:
+
+pip install -r requirements.txt
+pip install -e .
+
+would do the trick using pip.
