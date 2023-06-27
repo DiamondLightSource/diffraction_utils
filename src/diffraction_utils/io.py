@@ -81,7 +81,7 @@ def warn_missing_metadata(func):
     corresponding information is missing, a warning will be printed instead of
     an error being raised. This means that, if some DAQ dude fucked up and
     there's a load of data missing from the nexus file, at least someone can
-    retroactively add in the data.
+    retroactively add in the data.Test addition message.
     """
     def inner_function(*args, **kwargs):
         try:
@@ -89,7 +89,7 @@ def warn_missing_metadata(func):
         except (nx.NeXusError, KeyError) as _:
             warn(MissingMetadataWarning(
                 f"{func.__name__} failed to parse a value, so its value will "
-                "default to None.Test addition message"))
+                "default to None."))
     return inner_function
 
 
