@@ -795,9 +795,14 @@ class I07Nexus(NexusBase):
         """
         if "filterset" in self.nx_instrument:
             return float(self.nx_instrument.filterset.transmission)
-        if "fatt" in self.nx_instrument:
+        elif "fatt" in self.nx_instrument:
             return self.nx_instrument.fatt.transmission.nxdata
-        raise nx.NeXusError("No transmission coefficient found.")
+        #need to account for instances where there is no transmission data within the nexus 
+        # file, set to a default value of 1. 
+        else:
+            print("No transmission value found, therefore setting to value 1")
+            return 1
+        #raise nx.NeXusError("No transmission coefficient found.")
 
     def _parse_dcd_circle_radius(self) -> float:
         """
