@@ -89,7 +89,7 @@ def warn_missing_metadata(func):
         except (nx.NeXusError, KeyError) as _:
             warn(MissingMetadataWarning(
                 f"{func.__name__} failed to parse a value, so its value will "
-                "default to None."))
+                "default to None.Test addition message"))
     return inner_function
 
 
