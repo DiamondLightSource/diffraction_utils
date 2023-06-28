@@ -800,7 +800,7 @@ class I07Nexus(NexusBase):
         #need to account for instances where there is no transmission data within the nexus 
         # file, set to a default value of 1. 
         else:
-            print("No transmission value found, therefore setting to value 1. Test 2")
+            print("No transmission value found, therefore setting to value 1. Test 3")
             return 1
         #raise nx.NeXusError("No transmission coefficient found.")
 
