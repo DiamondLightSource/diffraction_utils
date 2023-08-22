@@ -1034,8 +1034,23 @@ class I07Nexus(NexusBase):
 
             roi_dict = json.loads(json_str)
             return [Region.from_dict(roi_dict['Region_1'])]
+        
+        if self.detector_name==I07Nexus.excalibur_08_2023_roi:
+            regionsfull=list(filter( lambda x: 'Region' in x ,self.nx_instrument.excroi.keys()))
+            regionsnum=len(regionsfull)/10
+            total_dict={}
+            data=self.nx_instrument.excroi
+            #create whole dictionary based on full list of regions, but select first value in from X,Y,Width,Height lists
+            for n in np.arange(int(regionsnum)):
+                roi_dict={f"Region_{n+1}": {"x": data[f'Region_{n+1}_X'][0]._value, "width": data[f'Region_{n+1}_Width'][0]._value, "y": data[f'Region_{n+1}_Y'][0]._value, "height": data[f'Region_{n+1}_Height'][0]._value}}
+                total_dict.update(roi_dict)
+            #use similar setting to other version where it returns just the region of region1 
+            return [Region.from_dict(total_dict['Region_1'])]
         if self.detector_name == I07Nexus.excalibur_2022_fscan:
             # Just ignore the region of interest for fscans.
+            return
+        if self.detector_name==I07Nexus.excalibur_08_2023_stats:
+            # Just ignore use of regions if using excstats.
             return
         raise NotImplementedError()
 
