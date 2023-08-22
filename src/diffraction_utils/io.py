@@ -325,6 +325,8 @@ class I07Nexus(NexusBase):
     pilatus_eh2_stats = "pil3stats"
     pilatus_eh2_scan = "p3r"
     p2r = "p2r"
+    excalibur_08_2023_stats="excstats"
+    excalibur_08_2023_roi="excroi"
 
     # Setups.
     horizontal = "horizontal"
@@ -963,6 +965,11 @@ class I07Nexus(NexusBase):
             return I07Nexus.pilatus_eh2_stats
         if "p3r" in self.nx_entry:
             return I07Nexus.pilatus_eh2_scan
+        if "excstats" in self.nx_entry:
+            return I07Nexus.excalibur_08_2023_stats
+        if "excroi" in self.nx_entry:
+            return I07Nexus.excalibur_08_2023_roi
+        
 
         # If execution reached here, then the entry is (for some reason) missing
         # the detector name. Lets check all the NXdetectors and hope that one of
