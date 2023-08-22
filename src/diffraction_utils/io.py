@@ -1151,7 +1151,7 @@ class I07Nexus(NexusBase):
         """
         Returns whether or not we're currently using the excalibur detector.
         """
-        return self.detector_name in ['excroi', 'exr', 'EXCALIBUR']
+        return self.detector_name in ['excroi', 'exr', 'EXCALIBUR','excstats']
 
     @property
     def is_pilatus(self) -> bool:
