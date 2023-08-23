@@ -705,8 +705,9 @@ class I07Nexus(NexusBase):
 
         # In experimental hutch 1, it could be the P2M or the excalibur.
         if self.is_excalibur:
-            if self.is_rotated:
-                return 2069, 515
+            # #this might not be needed, as rotations can be done elsewhere in code
+            # if self.is_rotated:
+            #     return 2069, 515
             return 515, 2069
         if self.is_pilatus:
             if self.is_rotated:
