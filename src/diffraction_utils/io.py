@@ -771,7 +771,8 @@ class I07Nexus(NexusBase):
             motor_names = motor_names_eh2
 
         # Set the fourc names if our detector name is pil3roi.
-        if self.detector_name == I07Nexus.pilatus_eh2_2022:
+        fourcnames=[I07Nexus.pilatus_eh2_2022,I07Nexus.pilatus_eh2_scan]
+        if self.detector_name in fourcnames :
             motor_names = motor_names_eh2_fourc
 
         motors_dict = {}
