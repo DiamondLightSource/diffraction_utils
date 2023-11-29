@@ -831,6 +831,10 @@ class I07Nexus(NexusBase):
         # dps experiments means that this often ends up at around 90 degrees!
         if self.using_dps:
             return np.zeros((self.scan_length,))
+        #also need to set to zero if using p2m without dps
+        p2mlist=['pil2stats','pil2roi']
+        if self.detector_name in p2mlist:
+            return np.zeros((self.scan_length,))
 
         if self.is_eh2:
             try:
@@ -847,6 +851,10 @@ class I07Nexus(NexusBase):
         # important, because moving the diffractometer arm out of the way for
         # dps experiments means that this could take any value!
         if self.using_dps:
+            return np.zeros((self.scan_length,))
+        #also need to set to zero if using p2m without dps
+        p2mlist=['pil2stats','pil2roi']
+        if self.detector_name in p2mlist:
             return np.zeros((self.scan_length,))
 
         if self.is_eh2:
