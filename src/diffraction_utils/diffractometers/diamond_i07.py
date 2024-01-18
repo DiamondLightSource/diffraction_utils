@@ -68,13 +68,15 @@ class I07Diffractometer(DiffractometerBase):
             # These axes aren't always parsed in vertical geometries.
             theta_axis = np.array([0, 1, 0])
             chi_axis = np.array([1, 0, 0])
-
-            theta = self.data_file.theta[scan_index]
-            chi = self.data_file.chi[scan_index]
-
+            theta=0
+            chi=0
+            alpha=0
+            if self.setup != self.dcd:
+                theta = self.data_file.theta[scan_index]
+                chi = self.data_file.chi[scan_index]    
+                alpha = self.data_file.alpha[scan_index]         
             theta_rot = Rotation.from_rotvec(theta_axis*theta, degrees=True)
             chi_rot = Rotation.from_rotvec(chi_axis*chi, degrees=True)
-
             # Alpha acts after chi, which acts after theta. So, apply rotations
             # in the correct order to get the U matrix:
             return alpha_rot*chi_rot*theta_rot
