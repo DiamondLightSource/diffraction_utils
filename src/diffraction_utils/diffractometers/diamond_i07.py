@@ -99,7 +99,6 @@ class I07Diffractometer(DiffractometerBase):
             lab_beam_arr=lab_beam_vector.array
             tan_inc_angle=lab_beam_arr[0]/lab_beam_arr[2]
             inc_hor_angle=np.degrees(np.arctan(tan_inc_angle))
-            print(f"inc_angle_hor={inc_hor_angle}, gamma={gamma}")
             gamma-=inc_hor_angle
             
 
