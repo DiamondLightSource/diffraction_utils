@@ -77,7 +77,6 @@ class I07Diffractometer(DiffractometerBase):
 
             theta_rot = Rotation.from_rotvec(theta_axis*theta, degrees=True)
             chi_rot = Rotation.from_rotvec(chi_axis*chi, degrees=True)
-            print(f'theta rot={theta_rot.as_rotvec()},  chi rot ={chi_rot.as_rotvec()} , alpha rot ={alpha_rot.as_rotvec()}')
 
             # Alpha acts after chi, which acts after theta. So, apply rotations
             # in the correct order to get the U matrix:
