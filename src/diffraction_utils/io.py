@@ -339,7 +339,8 @@ class I07Nexus(NexusBase):
                  detector_distance=None,
                  setup: str = 'horizontal',
                  locate_local_data=True,
-                 using_dps=False):
+                 using_dps=False,
+                 experimental_hutch=0):
         # We can store whether we're using the dps system right away.
         self.using_dps = using_dps
 
@@ -357,9 +358,16 @@ class I07Nexus(NexusBase):
         super().__init__(local_path, local_data_path, locate_local_data)
 
         # Work out which experimental hutch this was carried out in.
-        self.is_eh1 = self._is_eh1
-        self.is_eh2 = self._is_eh2
-        self._check_hutch_parsing()
+        if experimental_hutch==1:
+            self.is_eh1=True
+            self.is_eh2=False
+        elif experimental_hutch==2:
+            self.is_eh1=False
+            self.is_eh2=True
+        else:
+            self.is_eh1 = self._is_eh1
+            self.is_eh2 = self._is_eh2
+            self._check_hutch_parsing()
 
         # Record the scattering geometry.
         if self.is_eh2:
