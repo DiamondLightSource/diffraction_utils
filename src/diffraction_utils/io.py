@@ -733,8 +733,11 @@ class I07Nexus(NexusBase):
         if self.is_excalibur:
             path_array = [
                 self.nx_instrument["excalibur_h5_data/exc_path"].nxdata]
+        if len(np.shape(path_array))==1:
+            return [x.decode('utf-8') for x in path_array]
+        else:
+            return [x.decode('utf-8') for listarr in path_array for x in listarr]
 
-        return [x.decode('utf-8') for x in path_array]
 
     def _parse_nx_detector(self):
         """
@@ -791,10 +794,10 @@ class I07Nexus(NexusBase):
             # last two cases are handled by multiplying by an array of ones.
             if "value_set" in dir(self.nx_instrument[name]):
                 motors_dict[name] = \
-                    self.nx_instrument[name].value_set.nxlink.nxdata
+                    self.nx_instrument[name].value_set.nxlink.nxdata*ones
                 if motors_dict[name] is None:
                     motors_dict[name] = \
-                        self.nx_instrument[name].value_set.nxlink.nxdata
+                        self.nx_instrument[name].value_set.nxlink.nxdata*ones
             elif "value" in dir(self.nx_instrument[name]):
                 motors_dict[name] = self.nx_instrument[name].value.nxdata*ones
         return motors_dict
