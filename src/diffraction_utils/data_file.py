@@ -143,7 +143,7 @@ class DataFileBase(ABC):
         """
         Returns the number of data points collected during this scan.
         """
-        return len(self.default_signal)
+        return np.size(self.default_signal)
 
     @abstractmethod
     def _parse_hdf5_internal_path(self) -> str:
@@ -278,7 +278,7 @@ def _try_to_find_files(filenames: List[str],
     # This function was written to handle strings, not pathlib.Paths.
     # It would be nice to update this one day, but for now I'm just casting
     # Paths to strings.
-    filenames = [str(x) for x in filenames]
+    filenames = [str(x) for x in filenames if x!=""]
     additional_search_paths = [str(x) for x in additional_search_paths]
 
     # If we had only one file, make a list out of it.
@@ -303,6 +303,8 @@ def _try_to_find_files(filenames: List[str],
             extra_path_list = split_srch_path[:-(j+1)]
             extra_path = '/'.join(extra_path_list)
             local_start_directories.append(extra_path)
+    
+    good_local_start_directories=[x for x in local_start_directories if x!='']
 
     # This line allows for a loading bar to show as we check the file.
     for i, _ in enumerate(filenames):
@@ -326,7 +328,7 @@ def _try_to_find_files(filenames: List[str],
         split_file_path = str(filenames[i]).split('/')
         for j in range(len(split_file_path)):
             local_guess = '/'.join(split_file_path[j:])
-            for start_dir in local_start_directories:
+            for start_dir in good_local_start_directories:
                 candidate_paths.append(
                     os.path.join(start_dir, local_guess))
 
