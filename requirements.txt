@@ -1,5 +1,5 @@
 nexusformat
-numpy==2.0.1
+numpy
 scipy
 h5py
 pytest
