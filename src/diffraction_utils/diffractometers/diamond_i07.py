@@ -69,7 +69,7 @@ class I07Diffractometer(DiffractometerBase):
             theta_axis = np.array([0, 1, 0])
             chi_axis = np.array([1, 0, 0])
             theta = self.data_file.theta[scan_index]
-            chi = self.data_file.chi[scan_index]   
+            chi = -self.data_file.chi[scan_index]   
             if self.setup==self.dcd:
                 theta=0
                 chi=0
