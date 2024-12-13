@@ -260,7 +260,10 @@ class NexusBase(DataFileBase):
         """
         # pylint: disable=bare-except
         try:
-            return self.nx_entry.default
+            nameout=self.nx_entry.default
+            if nameout=='exr':
+                nameout='exr_data'
+            return nameout
         except:
             return BAD_NEXUS_FILE
 
