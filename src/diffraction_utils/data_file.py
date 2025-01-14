@@ -143,7 +143,7 @@ class DataFileBase(ABC):
         """
         Returns the number of data points collected during this scan.
         """
-        return np.size(self.default_signal)
+        return np.shape(self.default_signal)[0]
 
     @abstractmethod
     def _parse_hdf5_internal_path(self) -> str:
