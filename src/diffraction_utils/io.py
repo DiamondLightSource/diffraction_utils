@@ -262,7 +262,7 @@ class NexusBase(DataFileBase):
         try:
             nameout=self.nx_entry.default
             if nameout=='exr':
-                nameout='exr_data'
+                nameout+='_data'
             return nameout
         except:
             return BAD_NEXUS_FILE
