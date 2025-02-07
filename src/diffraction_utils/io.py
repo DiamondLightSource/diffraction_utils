@@ -262,7 +262,7 @@ class NexusBase(DataFileBase):
         try:
             nameout=self.nx_entry.default
             if nameout=='exr':
-                nameout='exr_data'
+                nameout+='_data'
             return nameout
         except:
             return BAD_NEXUS_FILE
@@ -827,14 +827,14 @@ class I07Nexus(NexusBase):
         Returns the radius of the DCD circle.
         """
         if self.is_eh1:
-            return self.motors["dcdc2rad"][0]
+            return self.motors["dcdc2rad"]
 
     def _parse_dcd_omega(self) -> np.ndarray:
         """
         Returns a numpy array of the dcd_omega values throughout the scan.
         """
         if self.is_eh1:
-            return self.motors["dcdomega"][0]
+            return self.motors["dcdomega"]
 
     def _parse_delta(self) -> np.ndarray:
         """
@@ -844,11 +844,11 @@ class I07Nexus(NexusBase):
         # important, because moving the diffractometer arm out of the way for
         # dps experiments means that this often ends up at around 90 degrees!
         if self.using_dps:
-            return np.zeros((self.scan_length,))
+            return np.zeros((self.scan_length))
         #also need to set to zero if using p2m without dps
         p2mlist=['pil2stats','pil2roi']
         if self.detector_name in p2mlist:
-            return np.zeros((self.scan_length,))
+            return np.zeros((self.scan_length))
 
         if self.is_eh2:
             try:
@@ -865,11 +865,11 @@ class I07Nexus(NexusBase):
         # important, because moving the diffractometer arm out of the way for
         # dps experiments means that this could take any value!
         if self.using_dps:
-            return np.zeros((self.scan_length,))
+            return np.zeros((self.scan_length))
         #also need to set to zero if using p2m without dps
         p2mlist=['pil2stats','pil2roi']
         if self.detector_name in p2mlist:
-            return np.zeros((self.scan_length,))
+            return np.zeros((self.scan_length))
 
         if self.is_eh2:
             try:
@@ -913,7 +913,7 @@ class I07Nexus(NexusBase):
         # In eh2, just return a bunch of zeros. In reality, there isn't a
         # diff2theta field, but we can equivalently represent that by an array
         # of zeroes.
-        return np.zeros((self.scan_length,))
+        return np.zeros((self.scan_length))
 
     def _parse_chi(self) -> np.ndarray:
         """
@@ -925,7 +925,7 @@ class I07Nexus(NexusBase):
         # In eh2, just return a bunch of zeros. In reality, there isn't a
         # diff2chi field, but we can equivalently represent that by an array
         # of zeroes.
-        return np.zeros((self.scan_length,))
+        return np.zeros((self.scan_length))
 
     def _parse_detector_rot(self) -> float:
         """
