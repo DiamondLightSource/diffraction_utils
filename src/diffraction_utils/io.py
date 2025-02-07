@@ -802,7 +802,8 @@ class I07Nexus(NexusBase):
                     motors_dict[name] = \
                         self.nx_instrument[name].value_set.nxlink.nxdata*ones
             elif "value" in dir(self.nx_instrument[name]):
-                motors_dict[name] = self.nx_instrument[name].value.nxdata*ones
+                newvals=self.nx_instrument[name].value.nxdata
+                motors_dict[name] = newvals.ravel()*ones
         return motors_dict
 
     @warn_missing_metadata
