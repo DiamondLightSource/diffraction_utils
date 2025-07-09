@@ -609,7 +609,7 @@ class I07Nexus(NexusBase):
         """
         Returns True if the detector has been rotated by 90 degrees.
         """
-        return (self.det_rot > 89) and (self.det_rot < 91)
+        return (self.det_rot > 85) and (self.det_rot < 95)
 
     @property
     def has_image_data(self) -> bool:
