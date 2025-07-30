@@ -796,13 +796,17 @@ class I07Nexus(NexusBase):
             # containing varying values. We need to handle all three cases. The
             # last two cases are handled by multiplying by an array of ones.
             if "value_set" in dir(self.nx_instrument[name]):
-                motors_dict[name] = \
-                    self.nx_instrument[name].value_set.nxlink.nxdata[:self.scan_length]*ones
-                if motors_dict[name] is None:
+                if len(self.nx_instrument[name].value_set.nxlink.nxdata)>1:
                     motors_dict[name] = \
                         self.nx_instrument[name].value_set.nxlink.nxdata[:self.scan_length]*ones
+                else:
+                    motors_dict[name] = \
+                        self.nx_instrument[name].value_set.nxlink.nxdata*ones
+                # if motors_dict[name] is None:
+                #     motors_dict[name] = \
+                #         self.nx_instrument[name].value_set.nxlink.nxdata[:self.scan_length]*ones
             elif "value" in dir(self.nx_instrument[name]):
-                newvals=np.array(self.nx_instrument[name].value.nxdata[:self.scan_length])
+                newvals=np.array(self.nx_instrument[name].value.nxdata)
                 motors_dict[name] = newvals.ravel()*ones
         return motors_dict
 
