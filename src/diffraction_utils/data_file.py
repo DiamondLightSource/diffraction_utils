@@ -146,7 +146,8 @@ class DataFileBase(ABC):
         if len(np.shape(self.default_signal)) == 3:
             return np.shape(self.default_signal)[0]
         elif len(np.shape(self.default_signal)) == 4:
-            return np.shape(self.default_signal)[0]*np.shape(self.default_signal)[1]
+            return np.shape(self.default_signal)[
+                0] * np.shape(self.default_signal)[1]
         else:
             return np.size(self.default_signal)
 
@@ -305,7 +306,7 @@ def _try_to_find_files(filenames: List[str],
         search_path = local_start_directories[i]
         split_srch_path = search_path.split('/')
         for j in range(len(split_srch_path)):
-            extra_path_list = split_srch_path[:-(j+1)]
+            extra_path_list = split_srch_path[:-(j + 1)]
             extra_path = '/'.join(extra_path_list)
             local_start_directories.append(extra_path)
 

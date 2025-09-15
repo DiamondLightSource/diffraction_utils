@@ -23,11 +23,11 @@ def test_u_matrix_horizontal(i07_04_2022_diffractometer: I07Diffractometer):
     chi = 0.45  # Note that theta and alpha were zeroed throughout scan.
     chi_axis = np.array([1, 0, 0])  # Chi acts about [-1, 0, 0]!
 
-    inverse_chi_rot = Rotation.from_rotvec(-chi*chi_axis, degrees=True)
+    inverse_chi_rot = Rotation.from_rotvec(-chi * chi_axis, degrees=True)
 
     random_vec = np.random.random(3)
 
-    assert_allclose(random_vec, (inverse_chi_rot*u_mat_0).apply(random_vec),
+    assert_allclose(random_vec, (inverse_chi_rot * u_mat_0).apply(random_vec),
                     rtol=1e-4, atol=1e-4)
 
 
@@ -43,7 +43,7 @@ def test_detector_vector(i07_04_2022_diffractometer: I07Diffractometer):
     delta = 0.9  # Note that gamma was nearly zeroed in this simple scan.
     delta_axis = np.array([1, 0, 0])  # Delta acts about [-1, 0, 0]!
 
-    inverse_delta_rot = Rotation.from_rotvec(delta*delta_axis, degrees=True)
+    inverse_delta_rot = Rotation.from_rotvec(delta * delta_axis, degrees=True)
 
     # The poor absolute tolerance on this test comes from our finite gamma.
     assert_allclose(inverse_delta_rot.apply(det_vec.array), [0, 0, 1],

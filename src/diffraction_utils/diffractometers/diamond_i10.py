@@ -43,7 +43,8 @@ class I10RasorDiffractometer(DiffractometerBase):
         theta_axis = np.array([1, 0, 0])
         chi_axis = np.array([0, 0, 1])
 
-        # We need to work out what our current chi, theta and 2theta values are.
+        # We need to work out what our current chi, theta and 2theta values
+        # are.
         if self.detector == I10RasorDiffractometer.area_detector:
             theta = self.data_file.theta_area[scan_index]
         elif self.detector == I10RasorDiffractometer.point_detector:
@@ -53,14 +54,14 @@ class I10RasorDiffractometer(DiffractometerBase):
         chi = self.data_file.chi[scan_index]
 
         # Create the rotation objects.
-        theta_rot = Rotation.from_rotvec(theta_axis*theta, degrees=True)
-        chi_rot = Rotation.from_rotvec(chi_axis*chi, degrees=True)
+        theta_rot = Rotation.from_rotvec(theta_axis * theta, degrees=True)
+        chi_rot = Rotation.from_rotvec(chi_axis * chi, degrees=True)
 
         # Chi acts after theta (i.e. theta is attached to chi), so
         # chi_rot*theta_rot would generate a rotation that would map from the
         # lab frame to the sample holder frame. This is precisely the inverse
         # of the U matrix!
-        return (chi_rot*theta_rot).inv()
+        return (chi_rot * theta_rot).inv()
 
     def get_detector_vector(self, frame: Frame) -> Vector3:
         # First we need a vector pointing at the detector in the lab frame.
@@ -71,7 +72,7 @@ class I10RasorDiffractometer(DiffractometerBase):
             two_theta = self.data_file.two_theta[frame.scan_index]
 
         # Create the rotation object.
-        two_theta_rot = Rotation.from_rotvec(two_theta_axis*two_theta,
+        two_theta_rot = Rotation.from_rotvec(two_theta_axis * two_theta,
                                              degrees=True)
 
         # Act this rotation on the beam.

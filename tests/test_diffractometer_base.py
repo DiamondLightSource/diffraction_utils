@@ -97,11 +97,11 @@ def test_get_incident_beam(rasor: I10RasorDiffractometer):
     beam_on_sample = rasor.get_incident_beam(sh_frame)
 
     # Motor values read manually from .nxs file.
-    theta = 49.6284 - 3.5/2
+    theta = 49.6284 - 3.5 / 2
     chi = 1
 
     # Prepare to rotate the beam array back to the lab.
-    rot = Rotation.from_rotvec(np.array([-1, 0, 0])*theta, degrees=True)
-    rot *= Rotation.from_rotvec(np.array([0, 0, -1])*chi, degrees=True)
+    rot = Rotation.from_rotvec(np.array([-1, 0, 0]) * theta, degrees=True)
+    rot *= Rotation.from_rotvec(np.array([0, 0, -1]) * chi, degrees=True)
 
     assert_allclose(rot.apply(beam_on_sample.array), [0, 0, 1], atol=1e-6)

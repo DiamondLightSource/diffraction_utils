@@ -20,21 +20,21 @@ def test_u_matrix(rasor: I10RasorDiffractometer):
     u_mat_0 = rasor.get_u_matrix(70)
 
     # Motor values read manually from .nxs file.
-    theta = 49.6284 - 3.5/2
+    theta = 49.6284 - 3.5 / 2
     chi = 1
 
     # These are absolutely the rotations required to go from the lab frame to
     # the sample frame, having done a very big think. Anyone that thinks
     # otherwise (namely: me in the future) can just fight me. (Note that I'm not
     # actually 100% on the chi, but who cares about chi on i10?)
-    reverse_th_rot = Rotation.from_rotvec(np.array([1, 0, 0])*theta,
+    reverse_th_rot = Rotation.from_rotvec(np.array([1, 0, 0]) * theta,
                                           degrees=True)
-    reverse_chi_rot = Rotation.from_rotvec(np.array([0, 0, 1])*chi,
+    reverse_chi_rot = Rotation.from_rotvec(np.array([0, 0, 1]) * chi,
                                            degrees=True)
     random_vec = np.random.random(3)
 
     assert_allclose(random_vec,
-                    (reverse_chi_rot*reverse_th_rot*u_mat_0).apply(random_vec),
+                    (reverse_chi_rot * reverse_th_rot * u_mat_0).apply(random_vec),
                     rtol=1e-5)
 
 
@@ -50,7 +50,8 @@ def test_detector_vector(rasor: I10RasorDiffractometer):
     det_vec = rasor.get_detector_vector(frame)
 
     # To rotate it back to [0, 0, 1] we definitely need to apply the following:
-    rot_back = Rotation.from_rotvec(np.array([1, 0, 0])*tth_area, degrees=True)
+    rot_back = Rotation.from_rotvec(
+        np.array([1, 0, 0]) * tth_area, degrees=True)
 
     assert_allclose(rot_back.apply(det_vec.array), [0, 0, 1], atol=1e-5)
 
