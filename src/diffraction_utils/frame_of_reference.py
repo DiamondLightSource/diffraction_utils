@@ -35,7 +35,7 @@ class Frame:
     qpar_qperp = 'qpar_qperp'
     cartesian = 'cartesian'
     polar = 'polar'
-    sphericalpolar='sphericalpolar'
+    sphericalpolar = 'sphericalpolar'
 
     def __init__(self,
                  frame_name: str,

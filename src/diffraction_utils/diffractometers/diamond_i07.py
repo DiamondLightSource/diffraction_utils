@@ -69,10 +69,10 @@ class I07Diffractometer(DiffractometerBase):
             theta_axis = np.array([0, 1, 0])
             chi_axis = np.array([1, 0, 0])
             theta = self.data_file.theta[scan_index]
-            chi = -self.data_file.chi[scan_index]   
-            if self.setup==self.dcd:
-                theta=0
-                chi=0
+            chi = -self.data_file.chi[scan_index]
+            if self.setup == self.dcd:
+                theta = 0
+                chi = 0
                 alpha_rot = Rotation.from_rotvec(alpha_axis*0, degrees=True)
 
             theta_rot = Rotation.from_rotvec(theta_axis*theta, degrees=True)
@@ -93,14 +93,13 @@ class I07Diffractometer(DiffractometerBase):
 
         gamma = self.data_file.gamma[frame.scan_index]
         delta = self.data_file.delta[frame.scan_index]
-        #add in correction so that dcd is always along z - this assumes there is never the need for a single crystal scanning when using the dcd
-        if self.setup==self.dcd:
+        # add in correction so that dcd is always along z - this assumes there is never the need for a single crystal scanning when using the dcd
+        if self.setup == self.dcd:
             lab_beam_vector = self._dcd_incident_beam_lab
-            lab_beam_arr=lab_beam_vector.array
-            tan_inc_angle=lab_beam_arr[0]/lab_beam_arr[2]
-            inc_hor_angle=np.degrees(np.arctan(tan_inc_angle))
-            gamma-=inc_hor_angle
-            
+            lab_beam_arr = lab_beam_vector.array
+            tan_inc_angle = lab_beam_arr[0]/lab_beam_arr[2]
+            inc_hor_angle = np.degrees(np.arctan(tan_inc_angle))
+            gamma -= inc_hor_angle
 
         # Create the rotation objects.
         gamma_rot = Rotation.from_rotvec(gamma_axis*gamma, degrees=True)
@@ -117,7 +116,6 @@ class I07Diffractometer(DiffractometerBase):
         # Finally, rotate this vector into the frame that we need it in.
         self.rotate_vector_to_frame(detector_vec, frame)
         return detector_vec
-    
 
     def get_incident_beam(self, frame: Frame) -> Vector3:
         if self.setup != self.dcd:
@@ -126,14 +124,14 @@ class I07Diffractometer(DiffractometerBase):
         # For the DCD we need to put a bit more effort into calculating the
         # position of the incident beam.
         lab_beam_vector = self._dcd_incident_beam_lab
-        #rotate vector so that direction is along h in reciprocal space (this assumes dcd ignores single crystal samples)
-        lab_beam_arr=lab_beam_vector.array
-        tan_inc_angle=lab_beam_arr[0]/lab_beam_arr[2]
-        inc_hor_angle=np.degrees(np.arctan(tan_inc_angle))
-        rot_angle=-inc_hor_angle
-        rotation_axis= np.array([0, 1, 0])
-        dcd_rot=Rotation.from_rotvec(rotation_axis*rot_angle, degrees=True)
-        lab_beam_vector.array=dcd_rot.apply(lab_beam_arr)
+        # rotate vector so that direction is along h in reciprocal space (this assumes dcd ignores single crystal samples)
+        lab_beam_arr = lab_beam_vector.array
+        tan_inc_angle = lab_beam_arr[0]/lab_beam_arr[2]
+        inc_hor_angle = np.degrees(np.arctan(tan_inc_angle))
+        rot_angle = -inc_hor_angle
+        rotation_axis = np.array([0, 1, 0])
+        dcd_rot = Rotation.from_rotvec(rotation_axis*rot_angle, degrees=True)
+        lab_beam_vector.array = dcd_rot.apply(lab_beam_arr)
 
         self.rotate_vector_to_frame(lab_beam_vector, frame)
         return lab_beam_vector

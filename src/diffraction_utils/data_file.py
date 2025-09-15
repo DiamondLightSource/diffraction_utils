@@ -143,9 +143,9 @@ class DataFileBase(ABC):
         """
         Returns the number of data points collected during this scan.
         """
-        if len(np.shape(self.default_signal))==3:
+        if len(np.shape(self.default_signal)) == 3:
             return np.shape(self.default_signal)[0]
-        elif len(np.shape(self.default_signal))==4:
+        elif len(np.shape(self.default_signal)) == 4:
             return np.shape(self.default_signal)[0]*np.shape(self.default_signal)[1]
         else:
             return np.size(self.default_signal)
@@ -283,7 +283,7 @@ def _try_to_find_files(filenames: List[str],
     # This function was written to handle strings, not pathlib.Paths.
     # It would be nice to update this one day, but for now I'm just casting
     # Paths to strings.
-    filenames = [str(x) for x in filenames if x!=""]
+    filenames = [str(x) for x in filenames if x != ""]
     additional_search_paths = [str(x) for x in additional_search_paths]
 
     # If we had only one file, make a list out of it.
@@ -308,8 +308,9 @@ def _try_to_find_files(filenames: List[str],
             extra_path_list = split_srch_path[:-(j+1)]
             extra_path = '/'.join(extra_path_list)
             local_start_directories.append(extra_path)
-    
-    good_local_start_directories=[x for x in local_start_directories if x!='']
+
+    good_local_start_directories = [
+        x for x in local_start_directories if x != '']
 
     # This line allows for a loading bar to show as we check the file.
     for i, _ in enumerate(filenames):

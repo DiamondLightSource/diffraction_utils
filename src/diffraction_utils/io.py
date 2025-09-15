@@ -260,9 +260,9 @@ class NexusBase(DataFileBase):
         """
         # pylint: disable=bare-except
         try:
-            nameout=self.nx_entry.default
-            if nameout=='exr':
-                nameout+='_data'
+            nameout = self.nx_entry.default
+            if nameout == 'exr':
+                nameout += '_data'
             return nameout
         except:
             return BAD_NEXUS_FILE
@@ -328,8 +328,8 @@ class I07Nexus(NexusBase):
     pilatus_eh2_stats = "pil3stats"
     pilatus_eh2_scan = "p3r"
     p2r = "p2r"
-    excalibur_08_2023_stats="excstats"
-    excalibur_08_2023_roi="excroi"
+    excalibur_08_2023_stats = "excstats"
+    excalibur_08_2023_roi = "excroi"
 
     # Setups.
     horizontal = "horizontal"
@@ -361,12 +361,12 @@ class I07Nexus(NexusBase):
         super().__init__(local_path, local_data_path, locate_local_data)
 
         # Work out which experimental hutch this was carried out in.
-        if experimental_hutch==1:
-            self.is_eh1=True
-            self.is_eh2=False
-        elif experimental_hutch==2:
-            self.is_eh1=False
-            self.is_eh2=True
+        if experimental_hutch == 1:
+            self.is_eh1 = True
+            self.is_eh2 = False
+        elif experimental_hutch == 2:
+            self.is_eh1 = False
+            self.is_eh2 = True
         else:
             self.is_eh1 = self._is_eh1
             self.is_eh2 = self._is_eh2
@@ -716,7 +716,7 @@ class I07Nexus(NexusBase):
 
         # In experimental hutch 1, it could be the P2M or the excalibur.
         if self.is_excalibur:
-            #this might not be needed, as rotations can be done elsewhere in code
+            # this might not be needed, as rotations can be done elsewhere in code
             if self.is_rotated:
                 return 2069, 515
             return 515, 2069
@@ -736,11 +736,10 @@ class I07Nexus(NexusBase):
         if self.is_excalibur:
             path_array = [
                 self.nx_instrument["excalibur_h5_data/exc_path"].nxdata]
-        if len(np.shape(path_array))==1:
+        if len(np.shape(path_array)) == 1:
             return [x.decode('utf-8') for x in path_array]
         else:
             return [x.decode('utf-8') for listarr in path_array for x in listarr]
-
 
     def _parse_nx_detector(self):
         """
@@ -785,8 +784,8 @@ class I07Nexus(NexusBase):
             motor_names = motor_names_eh2
 
         # Set the fourc names if our detector name is pil3roi.
-        fourcnames=[I07Nexus.pilatus_eh2_2022,I07Nexus.pilatus_eh2_scan]
-        if self.detector_name in fourcnames :
+        fourcnames = [I07Nexus.pilatus_eh2_2022, I07Nexus.pilatus_eh2_scan]
+        if self.detector_name in fourcnames:
             motor_names = motor_names_eh2_fourc
 
         motors_dict = {}
@@ -796,7 +795,7 @@ class I07Nexus(NexusBase):
             # containing varying values. We need to handle all three cases. The
             # last two cases are handled by multiplying by an array of ones.
             if "value_set" in dir(self.nx_instrument[name]):
-                if len(self.nx_instrument[name].value_set.nxlink.nxdata)>1:
+                if len(self.nx_instrument[name].value_set.nxlink.nxdata) > 1:
                     motors_dict[name] = \
                         self.nx_instrument[name].value_set.nxlink.nxdata[:self.scan_length]*ones
                 else:
@@ -806,7 +805,7 @@ class I07Nexus(NexusBase):
                 #     motors_dict[name] = \
                 #         self.nx_instrument[name].value_set.nxlink.nxdata[:self.scan_length]*ones
             elif "value" in dir(self.nx_instrument[name]):
-                newvals=np.array(self.nx_instrument[name].value.nxdata)
+                newvals = np.array(self.nx_instrument[name].value.nxdata)
                 motors_dict[name] = newvals.ravel()*ones
         return motors_dict
 
@@ -820,12 +819,12 @@ class I07Nexus(NexusBase):
             return float(self.nx_instrument.filterset.transmission)
         elif "fatt" in self.nx_instrument:
             return self.nx_instrument.fatt.transmission.nxdata
-        #need to account for instances where there is no transmission data within the nexus 
-        # file, set to a default value of 1. 
+        # need to account for instances where there is no transmission data within the nexus
+        # file, set to a default value of 1.
         else:
             print("No transmission value found, therefore setting to value 1.")
             return 1
-        #raise nx.NeXusError("No transmission coefficient found.")
+        # raise nx.NeXusError("No transmission coefficient found.")
 
     def _parse_dcd_circle_radius(self) -> float:
         """
@@ -850,8 +849,8 @@ class I07Nexus(NexusBase):
         # dps experiments means that this often ends up at around 90 degrees!
         if self.using_dps:
             return np.zeros((self.scan_length))
-        #also need to set to zero if using p2m without dps
-        p2mlist=['pil2stats','pil2roi']
+        # also need to set to zero if using p2m without dps
+        p2mlist = ['pil2stats', 'pil2roi']
         if self.detector_name in p2mlist:
             return np.zeros((self.scan_length))
 
@@ -871,8 +870,8 @@ class I07Nexus(NexusBase):
         # dps experiments means that this could take any value!
         if self.using_dps:
             return np.zeros((self.scan_length))
-        #also need to set to zero if using p2m without dps
-        p2mlist=['pil2stats','pil2roi']
+        # also need to set to zero if using p2m without dps
+        p2mlist = ['pil2stats', 'pil2roi']
         if self.detector_name in p2mlist:
             return np.zeros((self.scan_length))
 
@@ -998,7 +997,6 @@ class I07Nexus(NexusBase):
             return I07Nexus.excalibur_08_2023_stats
         if "excroi" in self.nx_entry:
             return I07Nexus.excalibur_08_2023_roi
-        
 
         # If execution reached here, then the entry is (for some reason) missing
         # the detector name. Lets check all the NXdetectors and hope that one of
@@ -1063,22 +1061,24 @@ class I07Nexus(NexusBase):
 
             roi_dict = json.loads(json_str)
             return [Region.from_dict(roi_dict['Region_1'])]
-        
-        if self.detector_name==I07Nexus.excalibur_08_2023_roi:
-            regionsfull=list(filter( lambda x: 'Region' in x ,self.nx_instrument.excroi.keys()))
-            regionsnum=len(regionsfull)/10
-            total_dict={}
-            data=self.nx_instrument.excroi
-            #create whole dictionary based on full list of regions, but select first value in from X,Y,Width,Height lists
+
+        if self.detector_name == I07Nexus.excalibur_08_2023_roi:
+            regionsfull = list(
+                filter(lambda x: 'Region' in x, self.nx_instrument.excroi.keys()))
+            regionsnum = len(regionsfull)/10
+            total_dict = {}
+            data = self.nx_instrument.excroi
+            # create whole dictionary based on full list of regions, but select first value in from X,Y,Width,Height lists
             for n in np.arange(int(regionsnum)):
-                roi_dict={f"Region_{n+1}": {"x": data[f'Region_{n+1}_X'][0]._value, "width": data[f'Region_{n+1}_Width'][0]._value, "y": data[f'Region_{n+1}_Y'][0]._value, "height": data[f'Region_{n+1}_Height'][0]._value}}
+                roi_dict = {f"Region_{n+1}": {"x": data[f'Region_{n+1}_X'][0]._value, "width": data[f'Region_{n+1}_Width']
+                                              [0]._value, "y": data[f'Region_{n+1}_Y'][0]._value, "height": data[f'Region_{n+1}_Height'][0]._value}}
                 total_dict.update(roi_dict)
-            #use similar setting to other version where it returns just the region of region1 
+            # use similar setting to other version where it returns just the region of region1
             return [Region.from_dict(total_dict['Region_1'])]
         if self.detector_name == I07Nexus.excalibur_2022_fscan:
             # Just ignore the region of interest for fscans.
             return
-        if self.detector_name==I07Nexus.excalibur_08_2023_stats:
+        if self.detector_name == I07Nexus.excalibur_08_2023_stats:
             # Just ignore use of regions if using excstats.
             return
         raise NotImplementedError()
@@ -1195,7 +1195,7 @@ class I07Nexus(NexusBase):
         """
         Returns whether or not we're currently using the excalibur detector.
         """
-        return self.detector_name in ['excroi', 'exr', 'EXCALIBUR','excstats']
+        return self.detector_name in ['excroi', 'exr', 'EXCALIBUR', 'excstats']
 
     @property
     def is_pilatus(self) -> bool:
