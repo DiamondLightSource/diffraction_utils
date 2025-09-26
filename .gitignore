@@ -1,5 +1,10 @@
 .vscode
 *.pyc
 *.egg-info
+.eggs
 .DS_Store
 notebooks
+build
+__pycache__/
+**/__pycache__/
+*/__pycache__/
