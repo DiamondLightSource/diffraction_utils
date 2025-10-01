@@ -79,7 +79,7 @@ def warn_missing_metadata(func):
     """
     Wrap _parse functions with this to make them non-essential. If a parser's
     corresponding information is missing, a warning will be printed instead of
-    an error being raised. This means that, if some DAQ dude fucked up and
+    an error being raised. This means that, if DAQ messed up and
     there's a load of data missing from the nexus file, at least someone can
     retroactively add in the data.Test addition message.
     """
