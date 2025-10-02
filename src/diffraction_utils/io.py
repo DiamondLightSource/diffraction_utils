@@ -151,6 +151,7 @@ class NexusBase(DataFileBase):
         self.nx_detector = self._parse_nx_detector()
         self.diamond_scan = self._parse_diamond_scan()
         self.scan_fields = self._parse_scan_fields()
+        self.scan_axes = self._parse_scan_axes()
 
         # Now we can call super().__init__ to run the remaining parsers.
         super().__init__(local_path, local_data_path, locate_local_data)
@@ -163,6 +164,24 @@ class NexusBase(DataFileBase):
         Parses the diamond_scan NXcollection inside the main NXentry.
         """
         return self.nx_entry["diamond_scan"]
+
+    def _parse_scan_axes(self):
+        """
+        Returns the list of scan axes contained within the diamond scan.
+        """
+
+        if "scan_axes" not in self.diamond_scan:
+            return []
+
+        # Some explicit string casts in case these are byte arrays.
+        try:
+            return [x.decode('utf-8')
+                    for x in self.diamond_scan["scan_axes"].nxdata]
+        except AttributeError:
+            # These are strings, not byte arrays, so we can just return now.
+            return self.diamond_scan["scan_axes"].nxdata
+
+
 
     def _parse_scan_fields(self):
         """
@@ -541,6 +560,14 @@ class I07Nexus(NexusBase):
             if field.startswith('diff1'):
                 return True
 
+        for axis in self.scan_axes:
+            # This is not redundant. Users could forget to remove diff2 fields
+            # but prepend diff1 to their scan fields. In this case, we should
+            # return the truthiness of the first scan field we come across.
+            if axis.startswith('diff2'):
+                return False
+            if axis.startswith('diff1'):
+                return True
         # As of 09/2022, scan_fields may not be populated, in which case it's
         # an empty list in this code. Instead lets look for keys in the detector
         # that begin with diff1.
@@ -590,6 +617,15 @@ class I07Nexus(NexusBase):
             if field.startswith('diff1'):
                 return False
             if field.startswith('diff2'):
+                return True
+        
+        for axis in self.scan_axes:
+            # This is not redundant. Users could forget to remove diff2 fields
+            # but prepend diff1 to their scan fields. In this case, we should
+            # return the truthiness of the first scan field we come across.
+            if axis.startswith('diff1'):
+                return False
+            if axis.startswith('diff2'):
                 return True
 
         # As of 09/2022, scan_fields may not be populated, in which case it's
