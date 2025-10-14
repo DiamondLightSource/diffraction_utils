@@ -888,7 +888,7 @@ class I07Nexus(NexusBase):
         if self.using_dps:
             return np.zeros((self.scan_length))
         # also need to set to zero if using p2m without dps
-        p2mlist = ['pil2stats', 'pil2roi']
+        p2mlist = ['pil2stats', 'pil2roi','p2r']
         if self.detector_name in p2mlist:
             return np.zeros((self.scan_length))
 
@@ -909,7 +909,7 @@ class I07Nexus(NexusBase):
         if self.using_dps:
             return np.zeros((self.scan_length))
         # also need to set to zero if using p2m without dps
-        p2mlist = ['pil2stats', 'pil2roi']
+        p2mlist = ['pil2stats', 'pil2roi','p2r']
         if self.detector_name in p2mlist:
             return np.zeros((self.scan_length))
 
@@ -973,7 +973,8 @@ class I07Nexus(NexusBase):
         """
         Returns the orientation of the detector.
         """
-        if self.is_eh1:
+        p2mlist = ['pil2stats', 'pil2roi','p2r']
+        if (self.is_eh1)&(self._parse_detector_name()not in p2mlist):
             return self.motors["diff1prot"][0]
         # For now, assume unrotated detectors in eh2.
         return 0
