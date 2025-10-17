@@ -6,5 +6,5 @@
 notebooks
 build
 __pycache__/
-./src/diffraction_utils/diffractometers/__pycache__/*
 **/__pycache__/
+*/__pycache__/
