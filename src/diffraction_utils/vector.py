@@ -44,7 +44,7 @@ class Vector3:
         """
         Returns the unit vector parallel to this Vector3.
         """
-        return self.array/np.linalg.norm(self.array)
+        return self.array / np.linalg.norm(self.array)
 
     def to_frame(self, frame: 'Frame',
                  diffractometer: 'DiffractometerBase' = None):
@@ -83,9 +83,9 @@ class Vector3:
                 The length of the new vector. Defaults to 1.0.
         """
         array = length * np.array([
-            np.sin(polar)*np.sin(azimuth),
+            np.sin(polar) * np.sin(azimuth),
             np.cos(polar),
-            np.sin(polar)*np.cos(azimuth)
+            np.sin(polar) * np.cos(azimuth)
         ])
         return cls(array, frame)
 
@@ -129,8 +129,8 @@ def _rot_arr_from_a_to_b(array_a: np.ndarray, array_b: np.ndarray):
         array_b:
             The array we want to rotate to.
     """
-    vec_a_unit = np.array(array_a)/np.linalg.norm(np.array(array_a))
-    vec_b_unit = np.array(array_b)/np.linalg.norm(np.array(array_b))
+    vec_a_unit = np.array(array_a) / np.linalg.norm(np.array(array_a))
+    vec_b_unit = np.array(array_b) / np.linalg.norm(np.array(array_b))
     cross = np.cross(vec_a_unit, vec_b_unit)
 
     # The sine of the angle between vector_a and vector_b.
@@ -142,8 +142,8 @@ def _rot_arr_from_a_to_b(array_a: np.ndarray, array_b: np.ndarray):
         return Rotation.from_rotvec([0, 0, 0])
 
     # Now calculate the rotvec.
-    rot_axis_normal = cross/np.linalg.norm(cross)
-    rotvec = rot_axis_normal*angle_ab
+    rot_axis_normal = cross / np.linalg.norm(cross)
+    rotvec = rot_axis_normal * angle_ab
 
     # Return the rotvec's corresponding rotation.
     return Rotation.from_rotvec(rotvec)

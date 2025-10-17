@@ -1,5 +1,5 @@
 .vscode
-*.pyc
+**.pyc
 *.egg-info
 .eggs
 .DS_Store

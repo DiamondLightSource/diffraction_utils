@@ -91,7 +91,7 @@ def test_attributes_i07_04_2022(path_to_04_2022_i07_nxs: str):
     assert i07nexus.image_shape == (515, 2069)
 
     delta_scan = np.arange(0.9, 1.4, 0.04)
-    chi_scan = np.arange(0.45, 0.45+0.02*len(delta_scan), 0.02)
+    chi_scan = np.arange(0.45, 0.45 + 0.02 * len(delta_scan), 0.02)
     assert_allclose(i07nexus.theta, 0, atol=1e-6)
     assert_allclose(i07nexus.alpha, 0.001983, atol=1e-6)
     assert_allclose(i07nexus.gamma, -1.427e-05)
@@ -171,7 +171,8 @@ def test_i10_raw_image_paths(path_to_2022_i10_nxs, path_to_i10_data):
     assert correct_paths == i10nexus.raw_image_paths
 
 
-def test_i10_local_image_paths_clueless(path_to_2022_i10_nxs, path_to_i10_data):
+def test_i10_local_image_paths_clueless(
+        path_to_2022_i10_nxs, path_to_i10_data):
     """
     Make sure we can work out where data files are on our local machine without
     providing an explicit clue.
@@ -214,7 +215,8 @@ def test_load_image_arrays(path_to_2022_i10_nxs, path_to_i10_data):
 
     for arr in arrs:
         assert isinstance(arr, np.ndarray)
-        # Make sure the i10nexus.image_shape is set correctly while we're at it.
+        # Make sure the i10nexus.image_shape is set correctly while we're at
+        # it.
         assert arr.shape == i10nexus.image_shape
 
 
