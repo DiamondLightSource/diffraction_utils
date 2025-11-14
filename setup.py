@@ -19,8 +19,8 @@ setup(
     version='0.0.1',
     license='MIT',
     description='A package designed to simplify working with diffraction data.',
-    author='Richard Brearton',
-    author_email='richardbrearton@gmail.com',
+    author='Diamond Light Source',
+    author_email='philip.mousley@diamond.ac.uk',
     long_description=LONG_DESCRIPTION,
     long_decription_content_type='text/markdown',
     packages=find_packages('src'),
@@ -29,7 +29,6 @@ setup(
     include_package_data=True,
     zip_safe=False,
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
