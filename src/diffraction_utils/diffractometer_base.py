@@ -217,7 +217,8 @@ class DiffractometerBase(ABC):
                 # To go from the lab to hkl we need the inverse of UB.
                 rot = self.get_ub_matrix(vector.frame.scan_index).inv()
             case Frame.lab, Frame.qxqyqz:
-                #To go from the lab to cartesian, on the sample surface, but not matched to lattice parameters
+                #To go from the lab to cartesian, on the sample surface,\
+                #  but not matched to lattice parameters
                 rot = self.get_ub_matrix(vector.frame.scan_index).inv()
             case Frame.lab, Frame.sample_holder:
                 # To go from the lab to the sample holder we just need U^-1.

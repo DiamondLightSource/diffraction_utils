@@ -618,7 +618,6 @@ class I07Nexus(NexusBase):
                 return False
             if field.startswith('diff2'):
                 return True
-        
         for axis in self.scan_axes:
             # This is not redundant. Users could forget to remove diff2 fields
             # but prepend diff1 to their scan fields. In this case, we should
@@ -1024,8 +1023,9 @@ class I07Nexus(NexusBase):
                      "excstats": I07Nexus.excalibur_08_2023_stats,
                      "excroi":I07Nexus.excalibur_08_2023_roi,
                      }
-        #assuming duplicate value is from obsolete naming - "excroi":I07Nexus.excalibur_detector_2021,
-        
+        #assuming duplicate value is from obsolete naming \
+        # - "excroi":I07Nexus.excalibur_detector_2021,
+
         instrument_checknames={"excroi" :I07Nexus.excalibur_detector_2021,
                                "exr":I07Nexus.excalibur_04_2022,
                                "pil2roi": I07Nexus.pilatus_2021,
@@ -1037,15 +1037,15 @@ class I07Nexus(NexusBase):
                                "pil3stats":I07Nexus.pilatus_eh2_stats,
                                "p3r":I07Nexus.pilatus_eh2_scan,                               
                                }
-        
+
         for key,val in entry_checknames.items():
             if key in self.nx_entry:
                 return val
-        
+
         for key,val in instrument_checknames.items():
             if key in self.nx_entry.NXinstrument[0]:
                 return val
-        
+
         # pylint: disable=invalid-name
 
         class GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(Exception):
@@ -1093,8 +1093,10 @@ class I07Nexus(NexusBase):
             # create whole dictionary based on full list of regions, but select
             # first value in from X,Y,Width,Height lists
             for n in np.arange(int(regionsnum)):
-                roi_dict = {f"Region_{n+1}": {"x": data[f'Region_{n+1}_X'][0]._value, "width": data[f'Region_{n+1}_Width']
-                                              [0]._value, "y": data[f'Region_{n+1}_Y'][0]._value, "height": data[f'Region_{n+1}_Height'][0]._value}}
+                roi_dict = {f"Region_{n+1}": {"x": data[f'Region_{n+1}_X'][0]._value, \
+                            "width": data[f'Region_{n+1}_Width'][0]._value, \
+                                "y": data[f'Region_{n+1}_Y'][0]._value,\
+                                      "height": data[f'Region_{n+1}_Height'][0]._value}}
                 total_dict.update(roi_dict)
             # use similar setting to other version where it returns just the
             # region of region1
