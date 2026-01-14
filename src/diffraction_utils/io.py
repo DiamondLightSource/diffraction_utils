@@ -764,8 +764,8 @@ class I07Nexus(NexusBase):
             return 1679, 1475
         if self.is_dectris:
             if self.is_rotated:
-                return 2162,2068
-            return 2068,2162
+                return 2068,2162
+            return 2162,2068
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
     def _parse_raw_image_paths(self):
