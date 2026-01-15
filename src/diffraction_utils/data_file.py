@@ -145,11 +145,10 @@ class DataFileBase(ABC):
         """
         if len(np.shape(self.default_signal)) == 3:
             return np.shape(self.default_signal)[0]
-        elif len(np.shape(self.default_signal)) == 4:
+        if len(np.shape(self.default_signal)) == 4:
             return np.shape(self.default_signal)[
                 0] * np.shape(self.default_signal)[1]
-        else:
-            return np.size(self.default_signal)
+        return np.size(self.default_signal)
 
     @abstractmethod
     def _parse_hdf5_internal_path(self) -> str:
@@ -280,6 +279,13 @@ def _try_to_find_files(filenames: List[str],
             List of the corrected, actual paths to the files.
     """
     found_files = []
+
+    localpath=Path(additional_search_paths[0])
+    firstfile=filenames[0].split('/')[-1]
+    #assume if first file is found that paths are good
+    if os.path.exists(localpath/firstfile):
+        found_files=[localpath/file.split('/')[-1] for file in filenames]
+        return found_files
 
     # This function was written to handle strings, not pathlib.Paths.
     # It would be nice to update this one day, but for now I'm just casting
