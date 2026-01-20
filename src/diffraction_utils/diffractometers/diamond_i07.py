@@ -35,8 +35,8 @@ class I07Diffractometer(DiffractometerBase):
     beamline's experimental hutch 1.
 
     Args:
-        data_file (I10Nexus):
-            An instance of diffraction_utils.io.I10Nexus corresponding to the
+        data_file (I07Nexus):
+            An instance of diffraction_utils.io.I07Nexus corresponding to the
             nexus file that contains the diffractometer description.
         sample_oop (np.ndarray-like):
             A [h, k, l] array describing the sample's OOP vector in hkl-space.
