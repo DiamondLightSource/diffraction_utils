@@ -280,6 +280,13 @@ def _try_to_find_files(filenames: List[str],
     """
     found_files = []
 
+    localpath=Path(additional_search_paths[0])
+    firstfile=filenames[0].split('/')[-1]
+    #assume if first file is found that paths are good
+    if os.path.exists(localpath/firstfile):
+        found_files=[localpath/file.split('/')[-1] for file in filenames]
+        return found_files
+
     # This function was written to handle strings, not pathlib.Paths.
     # It would be nice to update this one day, but for now I'm just casting
     # Paths to strings.

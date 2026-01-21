@@ -349,7 +349,7 @@ class I07Nexus(NexusBase):
     p2r = "p2r"
     excalibur_08_2023_stats = "excstats"
     excalibur_08_2023_roi = "excroi"
-
+    eiger_detector_01_2026="eir"
     # Setups.
     horizontal = "horizontal"
     vertical = "vertical"
@@ -581,9 +581,8 @@ class I07Nexus(NexusBase):
         # After digging through IOC's, we saw that if the detector name starts
         # with pil2 it's most likely the P2M, which would be very difficult to
         # use in EH2. So, let's run a check against this too.
-        if self.detector_name.startswith("pil2"):
-            return True
-        if self.detector_name.startswith("p2"):
+        large_det_starts=["pil2","p2","eir"]
+        if any([self.detector_name.startswith(phrase) for phrase in large_det_starts]):
             return True
 
         # Similarly, it's very likely that the experiment is in EH1 if the
@@ -736,6 +735,8 @@ class I07Nexus(NexusBase):
             return 55e-6
         if self.is_pilatus:
             return 172e-6
+        if self.is_dectris:
+            return 75e-6
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
     def _parse_image_shape(self) -> float:
@@ -760,6 +761,10 @@ class I07Nexus(NexusBase):
             if self.is_rotated:
                 return 1475, 1679
             return 1679, 1475
+        if self.is_dectris:
+            if self.is_rotated:
+                return 2068,2162
+            return 2162,2068
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
     def _parse_raw_image_paths(self):
@@ -973,7 +978,7 @@ class I07Nexus(NexusBase):
         Returns the orientation of the detector.
         """
         p2mlist = ['pil2stats', 'pil2roi','p2r']
-        if (self.is_eh1)&(self._parse_detector_name()not in p2mlist):
+        if (self.is_eh1)&(self._parse_detector_name() not in p2mlist):
             return self.motors["diff1prot"][0]
         # For now, assume unrotated detectors in eh2.
         return 0
@@ -1022,11 +1027,11 @@ class I07Nexus(NexusBase):
                      "p3r": I07Nexus.pilatus_eh2_scan,
                      "excstats": I07Nexus.excalibur_08_2023_stats,
                      "excroi":I07Nexus.excalibur_08_2023_roi,
+                     "eir":I07Nexus.eiger_detector_01_2026
                      }
-        #assuming duplicate value is from obsolete naming \
-        # - "excroi":I07Nexus.excalibur_detector_2021,
-
-        instrument_checknames={"excroi" :I07Nexus.excalibur_detector_2021,
+        #assuming duplicate value is from obsolete naming - "excroi":I07Nexus.excalibur_detector_2021,
+        
+        instrument_checknames={"excroi" :I07Nexus.excalibur_08_2023_roi,
                                "exr":I07Nexus.excalibur_04_2022,
                                "pil2roi": I07Nexus.pilatus_2021,
                                "PILATUS" :I07Nexus.pilatus_2022,
@@ -1036,6 +1041,7 @@ class I07Nexus(NexusBase):
                                "pil3roi": I07Nexus.pilatus_eh2_2022,
                                "pil3stats":I07Nexus.pilatus_eh2_stats,
                                "p3r":I07Nexus.pilatus_eh2_scan,                               
+                               "eir":I07Nexus.eiger_detector_01_2026                               
                                }
 
         for key,val in entry_checknames.items():
@@ -1236,6 +1242,13 @@ class I07Nexus(NexusBase):
                                       I07Nexus.pilatus_eh2_stats,
                                       I07Nexus.pilatus_eh2_scan]
 
+    @property
+    def is_dectris(self) -> bool:
+        """
+        Returns whether or not detector is a dectris detector
+        """
+        return self.detector_name in [I07Nexus.eiger_detector_01_2026]
+
     @warn_missing_metadata
     def _parse_u(self) -> np.ndarray:
         """
@@ -1254,135 +1267,3 @@ class I07Nexus(NexusBase):
         # This may result in some warnings when reading older data.
         return self.nx_instrument["diffcalchdr.diffcalc_ub"].value.nxdata
 
-
-class I10Nexus(NexusBase):
-    """
-    This class extends NexusBase with methods useful for scraping information
-    from nexus files produced at the I10 beamline at Diamond.
-    """
-
-    # We might need to check which instrument we're using at some point.
-    rasor_instrument = "rasor"
-
-    def __init__(self,
-                 local_path: Union[str, Path],
-                 local_data_path: Union[str, Path] = '',
-                 detector_distance: float = None,
-                 locate_local_data: bool = True):
-        super().__init__(local_path, local_data_path, locate_local_data)
-
-        # TODO: properly parse this when this becomes relevant.
-        self.polarisation = NotImplemented
-
-        # Warn the user if detector distance hasn't been set.
-        if detector_distance is None:
-            warn(MissingMetadataWarning(
-                "Detector distance has not been set. At I10, sample-detector "
-                "distance is not recorded in the nexus file, and must be "
-                "input manually when using this library if it is needed."))
-
-        # Initialize the i10 specific stuff.
-        self.detector_distance = detector_distance
-        self.theta = self._parse_theta()
-        self.theta_area = self._parse_theta_area()
-        self.two_theta = self._parse_two_theta()
-        self.two_theta_area = self._parse_two_theta_area()
-        self.chi = self._parse_chi()
-
-    @property
-    def has_image_data(self) -> bool:
-        """For now, assume all i10 data we're given is image data."""
-        return True
-
-    def _parse_has_hdf5_data(self) -> bool:
-        """As of 31/05/2022, i10 does not output hdf5 data, only .tiffs."""
-        return False
-
-    def _parse_hdf5_internal_path(self) -> str:
-        """Trivially raises, but we need to implement the abstractmethod"""
-        return super()._parse_hdf5_internal_path()
-
-    def _parse_raw_hdf5_path(self) -> Union[str, Path]:
-        """Trivially raises, but we need to implement the abstractmethod"""
-        return super()._parse_raw_hdf5_path()
-
-    def _parse_raw_image_paths(self) -> List[str]:
-        """
-        Returns a list of paths to the .tiff images recorded during this scan.
-        These are the same paths that were originally recorded during the scan,
-        so will point at some directory in the diamond filesystem.
-        """
-        return [x.decode('utf-8') for x in self.default_signal]
-
-    def _parse_probe_energy(self):
-        """
-        Returns the energy of the probe particle parsed from this NexusFile.
-        """
-        return float(self.nx_instrument.pgm.energy)
-
-    def _parse_pixel_size(self) -> float:
-        """
-        All detectors on I10 have 13.5 micron pixels.
-        """
-        return 13.5e-6
-
-    def _parse_image_shape(self) -> Tuple[int]:
-        """
-        Returns the shape of detector images. This is easy in I10, since they're
-        both 2048**2 square detectors.
-        """
-        return 2048, 2048
-
-    def _parse_motors(self) -> Dict[str, np.ndarray]:
-        """
-        A dictionary of all of the motor positions. This is only useful if you
-        know some diffractometer specific keys, so it's kept private to
-        encourage users to directly access the cleaner theta, two_theta etc.
-        properties.
-        """
-        instr_motor_names = ["th", "tth", "chi"]
-        diff_motor_names = ["theta", "2_theta", "chi"]
-
-        motors_dict = {
-            x: np.ones(self.scan_length) *
-            self.nx_instrument.rasor.diff[y]._value
-            for x, y in zip(instr_motor_names, diff_motor_names)}
-
-        for name in instr_motor_names:
-            try:
-                motors_dict[name] = self.nx_instrument[name].value._value
-            except KeyError:
-                pass
-        return motors_dict
-
-    def _parse_theta(self) -> np.ndarray:
-        """
-        Returns the current theta value of the diffractometer, as parsed from
-        the nexus file. Note that this will be different to thArea in GDA.
-        """
-        return self.motors["th"]
-
-    def _parse_two_theta(self) -> np.ndarray:
-        """
-        Returns the current two-theta value of the diffractometer, as parsed
-        from the nexus file. Note that this will be different to tthArea in GDA.
-        """
-        return self.motors["tth"]
-
-    def _parse_theta_area(self) -> np.ndarray:
-        """
-        Returns the values of the thArea virtual motor during this scan.
-        """
-        return 180 - self.theta
-
-    def _parse_two_theta_area(self) -> np.ndarray:
-        """
-        Returns the values of the tthArea virtual motor during this scan.
-        """
-        return 90 - self.two_theta
-
-    def _parse_chi(self) -> np.ndarray:
-        """
-        Returns the current chi value of the diffractometer.
-        """
-        return 90 - self.motors["chi"]
