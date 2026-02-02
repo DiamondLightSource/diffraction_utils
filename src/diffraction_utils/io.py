@@ -617,7 +617,6 @@ class I07Nexus(NexusBase):
                 return False
             if field.startswith('diff2'):
                 return True
-        
         for axis in self.scan_axes:
             # This is not redundant. Users could forget to remove diff2 fields
             # but prepend diff1 to their scan fields. In this case, we should
@@ -815,6 +814,13 @@ class I07Nexus(NexusBase):
             "fourc.diff2delta", "fourc.diff2gamma",  # Basic motors.
             "fourc.diff2omega", "fourc.diff2alpha"  # Basic motors.
         ]
+        motor_names_eh1_fourc = [
+            "fourc.diff1delta", "fourc.diff1gamma",  # Basic motors.
+            "fourc.diff1theta", "fourc.diff1chi", # Basic motors.
+            "dcdomega", "dcdc2rad", "diff1prot",  # DCD values.
+            "dpsx", "dpsy", "dpsz", "dpsz2" # DPS values.
+        ]
+
 
         # The motors of interest in eh2.
         motor_names_eh2 = [
@@ -827,9 +833,15 @@ class I07Nexus(NexusBase):
             motor_names = motor_names_eh2
 
         # Set the fourc names if our detector name is pil3roi.
-        fourcnames = [I07Nexus.pilatus_eh2_2022, I07Nexus.pilatus_eh2_scan]
-        if self.detector_name in fourcnames:
+        fourcnames_eh2 = [I07Nexus.pilatus_eh2_2022, I07Nexus.pilatus_eh2_scan]
+        if self.detector_name in fourcnames_eh2:
             motor_names = motor_names_eh2_fourc
+
+        fourcnames_eh1=[I07Nexus.excalibur_detector_2021]
+        if self.detector_name in fourcnames_eh1:
+            motor_names=motor_names_eh1_fourc
+        
+
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
@@ -902,7 +914,11 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2delta"]
             except KeyError:
                 return self.motors["fourc.diff2delta"]
-        return self.motors["diff1delta"]
+        if self.is_eh1:
+            try:
+                return self.motors["diff1delta"]
+            except KeyError:
+                return self.motors["fourc.diff1delta"]
 
     def _parse_gamma(self) -> np.ndarray:
         """
@@ -923,7 +939,11 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2gamma"]
             except KeyError:
                 return self.motors["fourc.diff2gamma"]
-        return self.motors["diff1gamma"]
+        if self.is_eh1:
+            try:
+                return self.motors["diff1gamma"]
+            except KeyError:
+                return self.motors["fourc.diff1gamma"]
 
     def _parse_omega(self) -> np.ndarray:
         """
@@ -934,7 +954,10 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2omega"]
             except KeyError:
                 return self.motors["fourc.diff2omega"]
-        return self.motors["diff1omega"]
+        try:
+            return self.motors["diff1omega"]
+        except KeyError:
+            return np.zeros((self.scan_length))
 
     def _parse_alpha(self) -> np.ndarray:
         """
@@ -955,7 +978,10 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the theta values throughout the scan.
         """
         if self.is_eh1:
-            return self.motors["diff1theta"]
+            try:
+                return self.motors["diff1theta"]
+            except KeyError:
+                return self.motors["fourc.diff1theta"]
 
         # In eh2, just return a bunch of zeros. In reality, there isn't a
         # diff2theta field, but we can equivalently represent that by an array
@@ -967,7 +993,10 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the chi values throughout the scan.
         """
         if self.is_eh1:
-            return self.motors["diff1chi"]
+            try:
+                return self.motors["diff1chi"]
+            except KeyError:
+                return self.motors["fourc.diff1chi"]
 
         # In eh2, just return a bunch of zeros. In reality, there isn't a
         # diff2chi field, but we can equivalently represent that by an array
@@ -1044,15 +1073,15 @@ class I07Nexus(NexusBase):
                                "p3r":I07Nexus.pilatus_eh2_scan,                               
                                "eir":I07Nexus.eiger_detector_01_2026                               
                                }
-        
+
         for key,val in entry_checknames.items():
             if key in self.nx_entry:
                 return val
-        
+
         for key,val in instrument_checknames.items():
             if key in self.nx_entry.NXinstrument[0]:
                 return val
-        
+
         # pylint: disable=invalid-name
 
         class GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(Exception):
@@ -1100,8 +1129,10 @@ class I07Nexus(NexusBase):
             # create whole dictionary based on full list of regions, but select
             # first value in from X,Y,Width,Height lists
             for n in np.arange(int(regionsnum)):
-                roi_dict = {f"Region_{n+1}": {"x": data[f'Region_{n+1}_X'][0]._value, "width": data[f'Region_{n+1}_Width']
-                                              [0]._value, "y": data[f'Region_{n+1}_Y'][0]._value, "height": data[f'Region_{n+1}_Height'][0]._value}}
+                roi_dict = {f"Region_{n+1}": {"x": data[f'Region_{n+1}_X'][0]._value, \
+                            "width": data[f'Region_{n+1}_Width'][0]._value, \
+                                "y": data[f'Region_{n+1}_Y'][0]._value,\
+                                      "height": data[f'Region_{n+1}_Height'][0]._value}}
                 total_dict.update(roi_dict)
             # use similar setting to other version where it returns just the
             # region of region1
