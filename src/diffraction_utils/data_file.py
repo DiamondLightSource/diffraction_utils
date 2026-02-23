@@ -5,7 +5,7 @@ returned by different detectors/instruments.
 """
 
 import os
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Union
 
@@ -48,11 +48,13 @@ class DataFileBase(ABC):
             The raw paths to the image data, if there is any.
     """
 
-    def __init__(self,
-                 local_path: Union[str, Path],  # The path to this file.
-                 local_data_path: Union[str, Path] = '',  # Path to the data.
-                 # If True, will raise if local data cannot be found.
-                 locate_local_data=True):
+    def __init__(
+        self,
+        local_path: Union[str, Path],  # The path to this file.
+        local_data_path: Union[str, Path] = "",  # Path to the data.
+        # If True, will raise if local data cannot be found.
+        locate_local_data=True,
+    ):
         self.local_path = local_path
         self.local_data_path = local_data_path
 
@@ -145,11 +147,9 @@ class DataFileBase(ABC):
         """
         if len(np.shape(self.default_signal)) == 3:
             return np.shape(self.default_signal)[0]
-        elif len(np.shape(self.default_signal)) == 4:
-            return np.shape(self.default_signal)[
-                0] * np.shape(self.default_signal)[1]
-        else:
-            return np.size(self.default_signal)
+        if len(np.shape(self.default_signal)) == 4:
+            return np.shape(self.default_signal)[0] * np.shape(self.default_signal)[1]
+        return np.size(self.default_signal)
 
     @abstractmethod
     def _parse_hdf5_internal_path(self) -> str:
@@ -235,8 +235,9 @@ class DataFileBase(ABC):
         # In this case, we expect to find only one h5 file containing all of
         # the images. This syntax not only looks cool, but handily raises if
         # we found more than one hdf5 file with that name.
-        hdf5_file, = _try_to_find_files(
-            [self.raw_hdf5_path], [self.local_data_path, self.local_path])
+        (hdf5_file,) = _try_to_find_files(
+            [self.raw_hdf5_path], [self.local_data_path, self.local_path]
+        )
         return hdf5_file
 
     @abstractmethod
@@ -262,12 +263,12 @@ class DataFileBase(ABC):
         if not self.has_image_data:
             raise NoImagesError()
 
-        return _try_to_find_files(self.raw_image_paths,
-                                  [self.local_data_path, self.local_path])
+        return _try_to_find_files(
+            self.raw_image_paths, [self.local_data_path, self.local_path]
+        )
 
 
-def _try_to_find_files(filenames: List[str],
-                       additional_search_paths: List[str]):
+def _try_to_find_files(filenames: List[str], additional_search_paths: List[str]):
     """
     Check that data files exist if the file parsed by parser pointed to a
     separate file containing intensity information. If the intensity data
@@ -280,6 +281,13 @@ def _try_to_find_files(filenames: List[str],
             List of the corrected, actual paths to the files.
     """
     found_files = []
+
+    localpath = Path(additional_search_paths[0])
+    firstfile = filenames[0].split("/")[-1]
+    # assume if first file is found that paths are good
+    if os.path.exists(localpath / firstfile):
+        found_files = [localpath / file.split("/")[-1] for file in filenames]
+        return found_files
 
     # This function was written to handle strings, not pathlib.Paths.
     # It would be nice to update this one day, but for now I'm just casting
@@ -298,26 +306,25 @@ def _try_to_find_files(filenames: List[str],
     ]
     start_dirs.extend(additional_search_paths)
 
-    local_start_directories = [x.replace('\\', '/') for x in start_dirs]
+    local_start_directories = [x.replace("\\", "/") for x in start_dirs]
     num_start_directories = len(local_start_directories)
 
     # Now extend the additional search paths.
     for i in range(num_start_directories):
         search_path = local_start_directories[i]
-        split_srch_path = search_path.split('/')
+        split_srch_path = search_path.split("/")
         for j in range(len(split_srch_path)):
-            extra_path_list = split_srch_path[:-(j + 1)]
-            extra_path = '/'.join(extra_path_list)
+            extra_path_list = split_srch_path[: -(j + 1)]
+            extra_path = "/".join(extra_path_list)
             local_start_directories.append(extra_path)
 
-    good_local_start_directories = [
-        x for x in local_start_directories if x != '']
+    good_local_start_directories = [x for x in local_start_directories if x != ""]
 
     # This line allows for a loading bar to show as we check the file.
     for i, _ in enumerate(filenames):
         # Better to be safe... Note: windows is happy with / even though it
         # defaults to \
-        filenames[i] = str(filenames[i]).replace('\\', '/')
+        filenames[i] = str(filenames[i]).replace("\\", "/")
 
         # Maybe we can see the file in its original storage location?
         if os.path.isfile(filenames[i]):
@@ -332,12 +339,11 @@ def _try_to_find_files(filenames: List[str],
 
         # now generate a list of all directories that we'd like to check
         candidate_paths = []
-        split_file_path = str(filenames[i]).split('/')
+        split_file_path = str(filenames[i]).split("/")
         for j in range(len(split_file_path)):
-            local_guess = '/'.join(split_file_path[j:])
+            local_guess = "/".join(split_file_path[j:])
             for start_dir in good_local_start_directories:
-                candidate_paths.append(
-                    os.path.join(start_dir, local_guess))
+                candidate_paths.append(os.path.join(start_dir, local_guess))
 
         # Iterate over each of the candidate paths to see if any of them contain
         # the data file we're looking for.
