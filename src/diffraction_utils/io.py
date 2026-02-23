@@ -20,7 +20,7 @@ class and its children.
 import json
 from abc import abstractmethod
 from pathlib import Path
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict, Union
 from warnings import warn
 
 
