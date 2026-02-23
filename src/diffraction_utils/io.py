@@ -16,19 +16,16 @@ class and its children.
 # Prevents pylint from popping up every time you write a todo.
 # pylint: disable=fixme
 
-
 import json
 from abc import abstractmethod
 from pathlib import Path
-from typing import List, Dict, Tuple, Union
+from typing import Dict, List, Union
 from warnings import warn
-
 
 import nexusformat.nexus.tree as nx
 import numpy as np
 import pandas as pd
 from nexusformat.nexus import nxload
-
 
 from .data_file import DataFileBase
 from .frame_of_reference import Frame
@@ -36,11 +33,11 @@ from .polarisation import Polarisation
 from .region import Region
 from .vector import Vector3
 
-
 BAD_NEXUS_FILE = (
     "Nexus files suck. It turns out your nexus file sucked too. "
     "If you're seeing this message, it means some non-essential data couldn't "
-    "be parsed by diffraction_utils.")
+    "be parsed by diffraction_utils."
+)
 
 
 class BadNexusFileError(Exception):
@@ -66,12 +63,13 @@ def _get_utf_8(string_like):
     """
     # pylint: disable=raise-missing-from
     try:
-        string_like = string_like.decode('utf-8')
+        string_like = string_like.decode("utf-8")
     except AttributeError:
         if not isinstance(string_like, str):
             raise ValueError(
                 "string_like object must be a string, or be able to be "
-                f"decoded into a string. Instead got {string_like}.")
+                f"decoded into a string. Instead got {string_like}."
+            )
     return string_like
 
 
@@ -83,13 +81,18 @@ def warn_missing_metadata(func):
     there's a load of data missing from the nexus file, at least someone can
     retroactively add in the data.Test addition message.
     """
+
     def inner_function(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except (nx.NeXusError, KeyError) as _:
-            warn(MissingMetadataWarning(
-                f"{func.__name__} failed to parse a value, so its value will "
-                "default to None."))
+            warn(
+                MissingMetadataWarning(
+                    f"{func.__name__} failed to parse a value, so its value will "
+                    "default to None."
+                )
+            )
+
     return inner_function
 
 
@@ -110,9 +113,9 @@ def i07_data_from_dat(path_to_dat: Union[str, Path]) -> pd.DataFrame:
         table at the bottom of the .dat file.
     """
     # First find the line on which the metadata ends.
-    with open(path_to_dat, 'r', encoding='utf-8') as open_dat:
+    with open(path_to_dat, "r", encoding="utf-8") as open_dat:
         for line_number, line in enumerate(open_dat):
-            if line.strip().endswith('&END'):
+            if line.strip().endswith("&END"):
                 skip_rows = line_number + 1
 
     return pd.read_table(path_to_dat, skiprows=skip_rows)
@@ -136,10 +139,12 @@ class NexusBase(DataFileBase):
             The object produced by loading the file at file_path with nxload.
     """
 
-    def __init__(self,
-                 local_path: Union[str, Path],  # The path to this file.
-                 local_data_path: Union[str, Path] = '',  # Path to the data.
-                 locate_local_data=True):
+    def __init__(
+        self,
+        local_path: Union[str, Path],  # The path to this file.
+        local_data_path: Union[str, Path] = "",  # Path to the data.
+        locate_local_data=True,
+    ):
 
         # Set up the nexus specific attributes.
         # This needs to be done *before* calling super().__init__!
@@ -175,13 +180,10 @@ class NexusBase(DataFileBase):
 
         # Some explicit string casts in case these are byte arrays.
         try:
-            return [x.decode('utf-8')
-                    for x in self.diamond_scan["scan_axes"].nxdata]
+            return [x.decode("utf-8") for x in self.diamond_scan["scan_axes"].nxdata]
         except AttributeError:
             # These are strings, not byte arrays, so we can just return now.
             return self.diamond_scan["scan_axes"].nxdata
-
-
 
     def _parse_scan_fields(self):
         """
@@ -194,8 +196,7 @@ class NexusBase(DataFileBase):
 
         # Some explicit string casts in case these are byte arrays.
         try:
-            return [x.decode('utf-8')
-                    for x in self.diamond_scan["scan_fields"].nxdata]
+            return [x.decode("utf-8") for x in self.diamond_scan["scan_fields"].nxdata]
         except AttributeError:
             # These are strings, not byte arrays, so we can just return now.
             return self.diamond_scan["scan_fields"].nxdata
@@ -209,7 +210,7 @@ class NexusBase(DataFileBase):
         Raises:
             ValueError if more than one NXdetector is found.
         """
-        det, = self.nx_instrument.NXdetector
+        (det,) = self.nx_instrument.NXdetector
         return det
 
     def _parse_nx_instrument(self):
@@ -219,7 +220,7 @@ class NexusBase(DataFileBase):
         Raises:
             ValueError if more than one NXinstrument is found.
         """
-        instrument, = self.nx_entry.NXinstrument
+        (instrument,) = self.nx_entry.NXinstrument
         return instrument
 
     def _parse_nx_entry(self) -> nx.NXentry:
@@ -229,7 +230,7 @@ class NexusBase(DataFileBase):
         Raises:
             ValueError if more than one entry is found.
         """
-        entry, = self.nxfile.NXentry
+        (entry,) = self.nxfile.NXentry
         return entry
 
     def _parse_default_signal(self) -> np.ndarray:
@@ -280,8 +281,8 @@ class NexusBase(DataFileBase):
         # pylint: disable=bare-except
         try:
             nameout = self.nx_entry.default
-            if nameout == 'exr':
-                nameout += '_data'
+            if nameout == "exr":
+                nameout += "_data"
             return nameout
         except BaseException:
             return BAD_NEXUS_FILE
@@ -336,6 +337,7 @@ class I07Nexus(NexusBase):
             found from the nexus file, since often DPS values will be recorded
             even when it isn't in use.
     """
+
     # Detectors.
     excalibur_detector_2021 = "excroi"
     excalibur_04_2022 = "exr"
@@ -349,20 +351,22 @@ class I07Nexus(NexusBase):
     p2r = "p2r"
     excalibur_08_2023_stats = "excstats"
     excalibur_08_2023_roi = "excroi"
-
+    eiger_detector_01_2026 = "eir"
     # Setups.
     horizontal = "horizontal"
     vertical = "vertical"
     dcd = "DCD"
 
-    def __init__(self,
-                 local_path: Union[str, Path],
-                 local_data_path: Union[str, Path] = '',
-                 detector_distance=None,
-                 setup: str = 'horizontal',
-                 locate_local_data=True,
-                 using_dps=False,
-                 experimental_hutch=0):
+    def __init__(
+        self,
+        local_path: Union[str, Path],
+        local_data_path: Union[str, Path] = "",
+        detector_distance=None,
+        setup: str = "horizontal",
+        locate_local_data=True,
+        using_dps=False,
+        experimental_hutch=0,
+    ):
         # We can store whether we're using the dps system right away.
         self.using_dps = using_dps
 
@@ -402,8 +406,8 @@ class I07Nexus(NexusBase):
         self.image_shape = self._parse_image_shape()
         # The beam is always polarised along the synchrotron x-axis in I07.
         self.polarisation = Polarisation(
-            Polarisation.linear,
-            Vector3(np.array([1, 0, 0]), Frame(Frame.lab)))
+            Polarisation.linear, Vector3(np.array([1, 0, 0]), Frame(Frame.lab))
+        )
 
         # Parse the various i07-specific stuff.
         self.detector_distance = detector_distance
@@ -450,21 +454,21 @@ class I07Nexus(NexusBase):
         specify this scan amongst other similar scans.
         """
         meta_dict = {
-            'probe_energy': self.probe_energy,
-            'local_path': self.local_path,
-            'local_data_path': self.local_data_path,
-            'dcd_circle_radius': self.dcd_circle_radius,
-            'scan_length': self.scan_length,
-            'has_hdf5_data': self.has_hdf5_data,
+            "probe_energy": self.probe_energy,
+            "local_path": self.local_path,
+            "local_data_path": self.local_data_path,
+            "dcd_circle_radius": self.dcd_circle_radius,
+            "scan_length": self.scan_length,
+            "has_hdf5_data": self.has_hdf5_data,
         }
         if self.has_image_data:
             if self.has_hdf5_data:
-                meta_dict['hdf5_internal_path'] = self.hdf5_internal_path
-                meta_dict['raw_hdf5_path'] = self.raw_hdf5_path
-                meta_dict['local_hdf5_path'] = self.local_hdf5_path
+                meta_dict["hdf5_internal_path"] = self.hdf5_internal_path
+                meta_dict["raw_hdf5_path"] = self.raw_hdf5_path
+                meta_dict["local_hdf5_path"] = self.local_hdf5_path
             else:
-                meta_dict['raw_image_paths'] = self.raw_image_paths
-                meta_dict['local_image_paths'] = self.local_image_paths
+                meta_dict["raw_image_paths"] = self.raw_image_paths
+                meta_dict["local_image_paths"] = self.local_image_paths
 
         return meta_dict
 
@@ -481,18 +485,18 @@ class I07Nexus(NexusBase):
     def get_motors(self):
         """Returns all the motor positions (for use with update_motors)."""
         return {
-            'transmission': self.transmission,
-            'dcd_omega': self.dcd_omega,
-            'delta': self.delta,
-            'gamma': self.gamma,
-            'omega': self.omega,
-            'theta': self.theta,
-            'alpha': self.alpha,
-            'chi': self.chi,
-            'dpsx': self.dpsx,
-            'dpsy': self.dpsy,
-            'dpsz': self.dpsz,
-            'dpsz2': self.dpsz2
+            "transmission": self.transmission,
+            "dcd_omega": self.dcd_omega,
+            "delta": self.delta,
+            "gamma": self.gamma,
+            "omega": self.omega,
+            "theta": self.theta,
+            "alpha": self.alpha,
+            "chi": self.chi,
+            "dpsx": self.dpsx,
+            "dpsy": self.dpsy,
+            "dpsz": self.dpsz,
+            "dpsz2": self.dpsz2,
         }
 
     def get_image(self, image_number: int) -> np.ndarray:
@@ -555,18 +559,18 @@ class I07Nexus(NexusBase):
             # This is not redundant. Users could forget to remove diff2 fields
             # but prepend diff1 to their scan fields. In this case, we should
             # return the truthiness of the first scan field we come across.
-            if field.startswith('diff2'):
+            if field.startswith("diff2"):
                 return False
-            if field.startswith('diff1'):
+            if field.startswith("diff1"):
                 return True
 
         for axis in self.scan_axes:
             # This is not redundant. Users could forget to remove diff2 fields
             # but prepend diff1 to their scan fields. In this case, we should
             # return the truthiness of the first scan field we come across.
-            if axis.startswith('diff2'):
+            if axis.startswith("diff2"):
                 return False
-            if axis.startswith('diff1'):
+            if axis.startswith("diff1"):
                 return True
         # As of 09/2022, scan_fields may not be populated, in which case it's
         # an empty list in this code. Instead lets look for keys in the detector
@@ -575,15 +579,14 @@ class I07Nexus(NexusBase):
         for key in self.nx_entry[self.detector_name]:
             # Make sure that the key is utf-8.
             key = _get_utf_8(key)
-            if key.startswith('diff1'):
+            if key.startswith("diff1"):
                 return True
 
         # After digging through IOC's, we saw that if the detector name starts
         # with pil2 it's most likely the P2M, which would be very difficult to
         # use in EH2. So, let's run a check against this too.
-        if self.detector_name.startswith("pil2"):
-            return True
-        if self.detector_name.startswith("p2"):
+        large_det_starts = ["pil2", "p2", "eir"]
+        if any([self.detector_name.startswith(phrase) for phrase in large_det_starts]):
             return True
 
         # Similarly, it's very likely that the experiment is in EH1 if the
@@ -602,9 +605,11 @@ class I07Nexus(NexusBase):
         # Currently working on the assumption that 'pil3' is associated with
         # the p100k; also assuming that the p100k is only used in eh2. Hardly
         # bulletproof.
-        if self._parse_detector_name() in [I07Nexus.pilatus_eh2_2022,
-                                           I07Nexus.pilatus_eh2_stats,
-                                           I07Nexus.pilatus_eh2_scan]:
+        if self._parse_detector_name() in [
+            I07Nexus.pilatus_eh2_2022,
+            I07Nexus.pilatus_eh2_stats,
+            I07Nexus.pilatus_eh2_scan,
+        ]:
             return True
 
         # This check is very basic, but at the same time, should be robust. If
@@ -614,18 +619,17 @@ class I07Nexus(NexusBase):
             # This is not redundant. Users could forget to remove diff2 fields
             # but prepend diff1 to their scan fields. In this case, we should
             # return the truthiness of the first scan field we come across.
-            if field.startswith('diff1'):
+            if field.startswith("diff1"):
                 return False
-            if field.startswith('diff2'):
+            if field.startswith("diff2"):
                 return True
-        
         for axis in self.scan_axes:
             # This is not redundant. Users could forget to remove diff2 fields
             # but prepend diff1 to their scan fields. In this case, we should
             # return the truthiness of the first scan field we come across.
-            if axis.startswith('diff1'):
+            if axis.startswith("diff1"):
                 return False
-            if axis.startswith('diff2'):
+            if axis.startswith("diff2"):
                 return True
 
         # As of 09/2022, scan_fields may not be populated, in which case it's
@@ -635,7 +639,7 @@ class I07Nexus(NexusBase):
         for key in self.nx_entry[self.detector_name]:
             # Make sure that the key is utf-8.
             key = _get_utf_8(key)
-            if key.startswith('diff2'):
+            if key.startswith("diff2"):
                 return True
 
         return False
@@ -664,8 +668,9 @@ class I07Nexus(NexusBase):
         try:
             # Try to see if our detector's data points at an h5 file.
             if isinstance(self.nx_detector["data"], nx.NXlink):
-                if self.nx_detector["data"]._filename.endswith('.h5') or \
-                        self.nx_detector["data"]._filename.endswith('.hdf5'):
+                if self.nx_detector["data"]._filename.endswith(
+                    ".h5"
+                ) or self.nx_detector["data"]._filename.endswith(".hdf5"):
                     return True
         except Exception:
             # If something went really wrong, there mustn't be .h5 data.
@@ -680,11 +685,11 @@ class I07Nexus(NexusBase):
             BadNexusFileError
         """
         if self.is_eh1 and self.is_eh2:
-            raise BadNexusFileError(
-                "This data seemed to belong to both eh1 and eh2.")
+            raise BadNexusFileError("This data seemed to belong to both eh1 and eh2.")
         if not (self.is_eh1 or self.is_eh2):
             raise BadNexusFileError(
-                "This nexus file didn't seem to belong to eh1 or eh2.")
+                "This nexus file didn't seem to belong to eh1 or eh2."
+            )
 
     @warn_missing_metadata
     def _parse_attenuation_filters_moving(self):
@@ -697,10 +702,9 @@ class I07Nexus(NexusBase):
         change name.
         """
         filters_moving = self.nx_entry[
-            "EXCALIBUR_transmission/attenuation_filters_moving"].nxdata
-        ignore_images = [
-            x for x, num in enumerate(filters_moving) if num == 1
-        ]
+            "EXCALIBUR_transmission/attenuation_filters_moving"
+        ].nxdata
+        ignore_images = [x for x, num in enumerate(filters_moving) if num == 1]
         return ignore_images
 
     @warn_missing_metadata
@@ -737,6 +741,8 @@ class I07Nexus(NexusBase):
             return 55e-6
         if self.is_pilatus:
             return 172e-6
+        if self.is_dectris:
+            return 75e-6
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
     def _parse_image_shape(self) -> float:
@@ -761,6 +767,10 @@ class I07Nexus(NexusBase):
             if self.is_rotated:
                 return 1475, 1679
             return 1679, 1475
+        if self.is_dectris:
+            if self.is_rotated:
+                return 2068, 2162
+            return 2162, 2068
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
     def _parse_raw_image_paths(self):
@@ -771,13 +781,11 @@ class I07Nexus(NexusBase):
         if self.is_pilatus:
             path_array = self.nx_detector["image_data"].nxdata
         if self.is_excalibur:
-            path_array = [
-                self.nx_instrument["excalibur_h5_data/exc_path"].nxdata]
+            path_array = [self.nx_instrument["excalibur_h5_data/exc_path"].nxdata]
         if len(np.shape(path_array)) == 1:
-            return [x.decode('utf-8') for x in path_array]
+            return [x.decode("utf-8") for x in path_array]
         else:
-            return [x.decode('utf-8')
-                    for listarr in path_array for x in listarr]
+            return [x.decode("utf-8") for listarr in path_array for x in listarr]
 
     def _parse_nx_detector(self):
         """
@@ -796,10 +804,18 @@ class I07Nexus(NexusBase):
         properties.
         """
         motor_names = [
-            "diff1delta", "diff1gamma", "diff1omega",  # Basic motors.
-            "diff1theta", "diff1chi",  # Basic motors.
-            "dcdomega", "dcdc2rad", "diff1prot",  # DCD values.
-            "dpsx", "dpsy", "dpsz", "dpsz2"  # DPS values.
+            "diff1delta",
+            "diff1gamma",
+            "diff1omega",  # Basic motors.
+            "diff1theta",
+            "diff1chi",  # Basic motors.
+            "dcdomega",
+            "dcdc2rad",
+            "diff1prot",  # DCD values.
+            "dpsx",
+            "dpsy",
+            "dpsz",
+            "dpsz2",  # DPS values.
         ]
 
         # For some reason, in at least one nexus file I've seen these names.
@@ -807,14 +823,31 @@ class I07Nexus(NexusBase):
         # the future.
         # pylint: disable=unused-variable
         motor_names_eh2_fourc = [
-            "fourc.diff2delta", "fourc.diff2gamma",  # Basic motors.
-            "fourc.diff2omega", "fourc.diff2alpha"  # Basic motors.
+            "fourc.diff2delta",
+            "fourc.diff2gamma",  # Basic motors.
+            "fourc.diff2omega",
+            "fourc.diff2alpha",  # Basic motors.
+        ]
+        motor_names_eh1_fourc = [
+            "fourc.diff1delta",
+            "fourc.diff1gamma",  # Basic motors.
+            "fourc.diff1theta",
+            "fourc.diff1chi",  # Basic motors.
+            "dcdomega",
+            "dcdc2rad",
+            "diff1prot",  # DCD values.
+            "dpsx",
+            "dpsy",
+            "dpsz",
+            "dpsz2",  # DPS values.
         ]
 
         # The motors of interest in eh2.
         motor_names_eh2 = [
-            "diff2delta", "diff2gamma",  # Basic motors.
-            "diff2omega", "diff2alpha"  # Basic motors.
+            "diff2delta",
+            "diff2gamma",  # Basic motors.
+            "diff2omega",
+            "diff2alpha",  # Basic motors.
         ]
 
         # Correct the motor names if we're in experimental hutch 2.
@@ -822,9 +855,13 @@ class I07Nexus(NexusBase):
             motor_names = motor_names_eh2
 
         # Set the fourc names if our detector name is pil3roi.
-        fourcnames = [I07Nexus.pilatus_eh2_2022, I07Nexus.pilatus_eh2_scan]
-        if self.detector_name in fourcnames:
+        fourcnames_eh2 = [I07Nexus.pilatus_eh2_2022, I07Nexus.pilatus_eh2_scan]
+        if self.detector_name in fourcnames_eh2:
             motor_names = motor_names_eh2_fourc
+
+        fourcnames_eh1 = [I07Nexus.excalibur_detector_2021]
+        if self.detector_name in fourcnames_eh1:
+            motor_names = motor_names_eh1_fourc
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
@@ -834,11 +871,16 @@ class I07Nexus(NexusBase):
             # last two cases are handled by multiplying by an array of ones.
             if "value_set" in dir(self.nx_instrument[name]):
                 if len(self.nx_instrument[name].value_set.nxlink.nxdata) > 1:
-                    motors_dict[name] = \
-                        self.nx_instrument[name].value_set.nxlink.nxdata[:self.scan_length] * ones
+                    motors_dict[name] = (
+                        self.nx_instrument[name].value_set.nxlink.nxdata[
+                            : self.scan_length
+                        ]
+                        * ones
+                    )
                 else:
-                    motors_dict[name] = \
+                    motors_dict[name] = (
                         self.nx_instrument[name].value_set.nxlink.nxdata * ones
+                    )
                 # if motors_dict[name] is None:
                 #     motors_dict[name] = \
                 #         self.nx_instrument[name].value_set.nxlink.nxdata[:self.scan_length]*ones
@@ -888,7 +930,7 @@ class I07Nexus(NexusBase):
         if self.using_dps:
             return np.zeros((self.scan_length))
         # also need to set to zero if using p2m without dps
-        p2mlist = ['pil2stats', 'pil2roi','p2r']
+        p2mlist = ["pil2stats", "pil2roi", "p2r"]
         if self.detector_name in p2mlist:
             return np.zeros((self.scan_length))
 
@@ -897,7 +939,11 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2delta"]
             except KeyError:
                 return self.motors["fourc.diff2delta"]
-        return self.motors["diff1delta"]
+        if self.is_eh1:
+            try:
+                return self.motors["diff1delta"]
+            except KeyError:
+                return self.motors["fourc.diff1delta"]
 
     def _parse_gamma(self) -> np.ndarray:
         """
@@ -909,7 +955,7 @@ class I07Nexus(NexusBase):
         if self.using_dps:
             return np.zeros((self.scan_length))
         # also need to set to zero if using p2m without dps
-        p2mlist = ['pil2stats', 'pil2roi','p2r']
+        p2mlist = ["pil2stats", "pil2roi", "p2r"]
         if self.detector_name in p2mlist:
             return np.zeros((self.scan_length))
 
@@ -918,7 +964,11 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2gamma"]
             except KeyError:
                 return self.motors["fourc.diff2gamma"]
-        return self.motors["diff1gamma"]
+        if self.is_eh1:
+            try:
+                return self.motors["diff1gamma"]
+            except KeyError:
+                return self.motors["fourc.diff1gamma"]
 
     def _parse_omega(self) -> np.ndarray:
         """
@@ -929,7 +979,10 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2omega"]
             except KeyError:
                 return self.motors["fourc.diff2omega"]
-        return self.motors["diff1omega"]
+        try:
+            return self.motors["diff1omega"]
+        except KeyError:
+            return np.zeros((self.scan_length))
 
     def _parse_alpha(self) -> np.ndarray:
         """
@@ -950,7 +1003,10 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the theta values throughout the scan.
         """
         if self.is_eh1:
-            return self.motors["diff1theta"]
+            try:
+                return self.motors["diff1theta"]
+            except KeyError:
+                return self.motors["fourc.diff1theta"]
 
         # In eh2, just return a bunch of zeros. In reality, there isn't a
         # diff2theta field, but we can equivalently represent that by an array
@@ -962,7 +1018,10 @@ class I07Nexus(NexusBase):
         Returns a numpy array of the chi values throughout the scan.
         """
         if self.is_eh1:
-            return self.motors["diff1chi"]
+            try:
+                return self.motors["diff1chi"]
+            except KeyError:
+                return self.motors["fourc.diff1chi"]
 
         # In eh2, just return a bunch of zeros. In reality, there isn't a
         # diff2chi field, but we can equivalently represent that by an array
@@ -973,8 +1032,8 @@ class I07Nexus(NexusBase):
         """
         Returns the orientation of the detector.
         """
-        p2mlist = ['pil2stats', 'pil2roi','p2r']
-        if (self.is_eh1)&(self._parse_detector_name()not in p2mlist):
+        p2mlist = ["pil2stats", "pil2roi", "p2r"]
+        if (self.is_eh1) & (self._parse_detector_name() not in p2mlist):
             return self.motors["diff1prot"][0]
         # For now, assume unrotated detectors in eh2.
         return 0
@@ -1012,40 +1071,44 @@ class I07Nexus(NexusBase):
         Returns the name of the detector that we're using. Because life sucks,
         this is a function of time.
         """
-        entry_checknames={"exr":I07Nexus.excalibur_04_2022,
-                     "pil2roi" : I07Nexus.pilatus_2021,
-                     "PILATUS":I07Nexus.pilatus_2022,
-                     "pil2stats" :I07Nexus.pilatus_2_stats,
-                     "p2r" : I07Nexus.p2r,
-                     "EXCALIBUR": I07Nexus.excalibur_2022_fscan,
-                     "pil3roi": I07Nexus.pilatus_eh2_2022,
-                     "pil3stats": I07Nexus.pilatus_eh2_stats,
-                     "p3r": I07Nexus.pilatus_eh2_scan,
-                     "excstats": I07Nexus.excalibur_08_2023_stats,
-                     "excroi":I07Nexus.excalibur_08_2023_roi,
-                     }
-        #assuming duplicate value is from obsolete naming - "excroi":I07Nexus.excalibur_detector_2021,
-        
-        instrument_checknames={"excroi" :I07Nexus.excalibur_detector_2021,
-                               "exr":I07Nexus.excalibur_04_2022,
-                               "pil2roi": I07Nexus.pilatus_2021,
-                               "PILATUS" :I07Nexus.pilatus_2022,
-                               "pil2stats": I07Nexus.pilatus_2_stats,
-                               "p2r": I07Nexus.p2r,
-                               "EXCALIBUR": I07Nexus.excalibur_2022_fscan,
-                               "pil3roi": I07Nexus.pilatus_eh2_2022,
-                               "pil3stats":I07Nexus.pilatus_eh2_stats,
-                               "p3r":I07Nexus.pilatus_eh2_scan,                               
-                               }
-        
-        for key,val in entry_checknames.items():
+        entry_checknames = {
+            "exr": I07Nexus.excalibur_04_2022,
+            "pil2roi": I07Nexus.pilatus_2021,
+            "PILATUS": I07Nexus.pilatus_2022,
+            "pil2stats": I07Nexus.pilatus_2_stats,
+            "p2r": I07Nexus.p2r,
+            "EXCALIBUR": I07Nexus.excalibur_2022_fscan,
+            "pil3roi": I07Nexus.pilatus_eh2_2022,
+            "pil3stats": I07Nexus.pilatus_eh2_stats,
+            "p3r": I07Nexus.pilatus_eh2_scan,
+            "excstats": I07Nexus.excalibur_08_2023_stats,
+            "excroi": I07Nexus.excalibur_08_2023_roi,
+            "eir": I07Nexus.eiger_detector_01_2026,
+        }
+        # assuming duplicate value is from obsolete naming - "excroi":I07Nexus.excalibur_detector_2021,
+
+        instrument_checknames = {
+            "excroi": I07Nexus.excalibur_08_2023_roi,
+            "exr": I07Nexus.excalibur_04_2022,
+            "pil2roi": I07Nexus.pilatus_2021,
+            "PILATUS": I07Nexus.pilatus_2022,
+            "pil2stats": I07Nexus.pilatus_2_stats,
+            "p2r": I07Nexus.p2r,
+            "EXCALIBUR": I07Nexus.excalibur_2022_fscan,
+            "pil3roi": I07Nexus.pilatus_eh2_2022,
+            "pil3stats": I07Nexus.pilatus_eh2_stats,
+            "p3r": I07Nexus.pilatus_eh2_scan,
+            "eir": I07Nexus.eiger_detector_01_2026,
+        }
+
+        for key, val in entry_checknames.items():
             if key in self.nx_entry:
                 return val
-        
-        for key,val in instrument_checknames.items():
+
+        for key, val in instrument_checknames.items():
             if key in self.nx_entry.NXinstrument[0]:
                 return val
-        
+
         # pylint: disable=invalid-name
 
         class GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(Exception):
@@ -1055,7 +1118,8 @@ class I07Nexus(NexusBase):
 
         # Couldn't recognise the detector.
         raise GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(
-            "Your detector changed name again...")
+            "Your detector changed name again..."
+        )
 
     @warn_missing_metadata
     def _parse_signal_regions(self) -> List[Region]:
@@ -1072,33 +1136,41 @@ class I07Nexus(NexusBase):
         if self.detector_name == I07Nexus.excalibur_04_2022:
             # Make sure our code executes for bytes and strings.
             try:
-                json_str = self.nx_instrument[
-                    "ex_rois/excalibur_ROIs"]._value.decode("utf-8")
+                json_str = self.nx_instrument["ex_rois/excalibur_ROIs"]._value.decode(
+                    "utf-8"
+                )
             except AttributeError:
                 json_str = self.nx_instrument["ex_rois/excalibur_ROIs"]._value
             # This is badly formatted and cant be loaded by the json lib. We
             # need to make a series of modifications.
-            json_str = json_str.replace('u', '')
+            json_str = json_str.replace("u", "")
             json_str = json_str.replace("'", '"')
 
             roi_dict = json.loads(json_str)
-            return [Region.from_dict(roi_dict['Region_1'])]
+            return [Region.from_dict(roi_dict["Region_1"])]
 
         if self.detector_name == I07Nexus.excalibur_08_2023_roi:
             regionsfull = list(
-                filter(lambda x: 'Region' in x, self.nx_instrument.excroi.keys()))
+                filter(lambda x: "Region" in x, self.nx_instrument.excroi.keys())
+            )
             regionsnum = len(regionsfull) / 10
             total_dict = {}
             data = self.nx_instrument.excroi
             # create whole dictionary based on full list of regions, but select
             # first value in from X,Y,Width,Height lists
             for n in np.arange(int(regionsnum)):
-                roi_dict = {f"Region_{n+1}": {"x": data[f'Region_{n+1}_X'][0]._value, "width": data[f'Region_{n+1}_Width']
-                                              [0]._value, "y": data[f'Region_{n+1}_Y'][0]._value, "height": data[f'Region_{n+1}_Height'][0]._value}}
+                roi_dict = {
+                    f"Region_{n + 1}": {
+                        "x": data[f"Region_{n + 1}_X"][0]._value,
+                        "width": data[f"Region_{n + 1}_Width"][0]._value,
+                        "y": data[f"Region_{n + 1}_Y"][0]._value,
+                        "height": data[f"Region_{n + 1}_Height"][0]._value,
+                    }
+                }
                 total_dict.update(roi_dict)
             # use similar setting to other version where it returns just the
             # region of region1
-            return [Region.from_dict(total_dict['Region_1'])]
+            return [Region.from_dict(total_dict["Region_1"])]
         if self.detector_name == I07Nexus.excalibur_2022_fscan:
             # Just ignore the region of interest for fscans.
             return
@@ -1121,12 +1193,10 @@ class I07Nexus(NexusBase):
         Returns:
             The ith region of interest found in the .nxs file.
         """
-        x_1 = self.nx_detector[self._get_region_bounds_key(i, 'x_1')][0]
-        x_2 = self.nx_detector[self._get_region_bounds_key(
-            i, 'Width')][0] + x_1
-        y_1 = self.nx_detector[self._get_region_bounds_key(i, 'y_1')][0]
-        y_2 = self.nx_detector[self._get_region_bounds_key(
-            i, 'Height')][0] + y_1
+        x_1 = self.nx_detector[self._get_region_bounds_key(i, "x_1")][0]
+        x_2 = self.nx_detector[self._get_region_bounds_key(i, "Width")][0] + x_1
+        y_1 = self.nx_detector[self._get_region_bounds_key(i, "y_1")][0]
+        y_2 = self.nx_detector[self._get_region_bounds_key(i, "Height")][0] + y_1
         return Region(x_1, x_2, y_1, y_2)
 
     @property
@@ -1137,19 +1207,20 @@ class I07Nexus(NexusBase):
         background regions.
         """
         if self.detector_name == I07Nexus.excalibur_detector_2021:
-            return [self._get_ith_region(i)
-                    for i in range(2, self._number_of_regions + 1)]
+            return [
+                self._get_ith_region(i) for i in range(2, self._number_of_regions + 1)
+            ]
         if self.detector_name == I07Nexus.excalibur_04_2022:
             # Make sure our code executes for bytes and strings.
             try:
-                json_str = self.nx_instrument[
-                    "ex_rois/excalibur_ROIs"]._value.decode("utf-8")
+                json_str = self.nx_instrument["ex_rois/excalibur_ROIs"]._value.decode(
+                    "utf-8"
+                )
             except AttributeError:
-                json_str = self.nx_instrument[
-                    "ex_rois/excalibur_ROIs"]._value
+                json_str = self.nx_instrument["ex_rois/excalibur_ROIs"]._value
             # This is badly formatted and cant be loaded by the json lib. We
             # need to make a series of modifications.
-            json_str = json_str.replace('u', '')
+            json_str = json_str.replace("u", "")
             json_str = json_str.replace("'", '"')
 
             roi_dict = json.loads(json_str)
@@ -1164,8 +1235,7 @@ class I07Nexus(NexusBase):
         Parses all of the detector's dictionary keys and returns all keys
         relating to regions of interest.
         """
-        return [key for key in self.nx_detector.keys()
-                if key.startswith("Region")]
+        return [key for key in self.nx_detector.keys() if key.startswith("Region")]
 
     @property
     def _number_of_regions(self) -> int:
@@ -1173,7 +1243,7 @@ class I07Nexus(NexusBase):
         Returns the number of regions of interest described by this nexus file.
         This *assumes* that the region keys take the form f'region_{an_int}'.
         """
-        split_keys = [key.split('_') for key in self._region_keys]
+        split_keys = [key.split("_") for key in self._region_keys]
 
         return max([int(split_key[1]) for split_key in split_keys])
 
@@ -1201,14 +1271,14 @@ class I07Nexus(NexusBase):
         """
         # Note that the x, y swapping is a quirk of the nexus standard, and is
         # related to which axis on the detector varies most rapidly in memory.
-        if kind in ('x_1', 'x_start'):
-            insert = 'X'
-        elif kind in ('width', 'Width'):
-            insert = 'Width'
-        elif kind in ('y_1', 'y_start'):
-            insert = 'Y'
-        elif kind in ('height', 'Height'):
-            insert = 'Height'
+        if kind in ("x_1", "x_start"):
+            insert = "X"
+        elif kind in ("width", "Width"):
+            insert = "Width"
+        elif kind in ("y_1", "y_start"):
+            insert = "Y"
+        elif kind in ("height", "Height"):
+            insert = "Height"
         else:
             raise ValueError("Didn't recognise 'kind' argument.")
 
@@ -1219,20 +1289,29 @@ class I07Nexus(NexusBase):
         """
         Returns whether or not we're currently using the excalibur detector.
         """
-        return self.detector_name in ['excroi', 'exr', 'EXCALIBUR', 'excstats']
+        return self.detector_name in ["excroi", "exr", "EXCALIBUR", "excstats"]
 
     @property
     def is_pilatus(self) -> bool:
         """
         Returns whether or not we're currently using the pilatus detector.
         """
-        return self.detector_name in [I07Nexus.pilatus_2021,
-                                      I07Nexus.pilatus_2022,
-                                      I07Nexus.pilatus_2_stats,
-                                      I07Nexus.p2r,
-                                      I07Nexus.pilatus_eh2_2022,
-                                      I07Nexus.pilatus_eh2_stats,
-                                      I07Nexus.pilatus_eh2_scan]
+        return self.detector_name in [
+            I07Nexus.pilatus_2021,
+            I07Nexus.pilatus_2022,
+            I07Nexus.pilatus_2_stats,
+            I07Nexus.p2r,
+            I07Nexus.pilatus_eh2_2022,
+            I07Nexus.pilatus_eh2_stats,
+            I07Nexus.pilatus_eh2_scan,
+        ]
+
+    @property
+    def is_dectris(self) -> bool:
+        """
+        Returns whether or not detector is a dectris detector
+        """
+        return self.detector_name in [I07Nexus.eiger_detector_01_2026]
 
     @warn_missing_metadata
     def _parse_u(self) -> np.ndarray:
@@ -1251,136 +1330,3 @@ class I07Nexus(NexusBase):
         """
         # This may result in some warnings when reading older data.
         return self.nx_instrument["diffcalchdr.diffcalc_ub"].value.nxdata
-
-
-class I10Nexus(NexusBase):
-    """
-    This class extends NexusBase with methods useful for scraping information
-    from nexus files produced at the I10 beamline at Diamond.
-    """
-
-    # We might need to check which instrument we're using at some point.
-    rasor_instrument = "rasor"
-
-    def __init__(self,
-                 local_path: Union[str, Path],
-                 local_data_path: Union[str, Path] = '',
-                 detector_distance: float = None,
-                 locate_local_data: bool = True):
-        super().__init__(local_path, local_data_path, locate_local_data)
-
-        # TODO: properly parse this when this becomes relevant.
-        self.polarisation = NotImplemented
-
-        # Warn the user if detector distance hasn't been set.
-        if detector_distance is None:
-            warn(MissingMetadataWarning(
-                "Detector distance has not been set. At I10, sample-detector "
-                "distance is not recorded in the nexus file, and must be "
-                "input manually when using this library if it is needed."))
-
-        # Initialize the i10 specific stuff.
-        self.detector_distance = detector_distance
-        self.theta = self._parse_theta()
-        self.theta_area = self._parse_theta_area()
-        self.two_theta = self._parse_two_theta()
-        self.two_theta_area = self._parse_two_theta_area()
-        self.chi = self._parse_chi()
-
-    @property
-    def has_image_data(self) -> bool:
-        """For now, assume all i10 data we're given is image data."""
-        return True
-
-    def _parse_has_hdf5_data(self) -> bool:
-        """As of 31/05/2022, i10 does not output hdf5 data, only .tiffs."""
-        return False
-
-    def _parse_hdf5_internal_path(self) -> str:
-        """Trivially raises, but we need to implement the abstractmethod"""
-        return super()._parse_hdf5_internal_path()
-
-    def _parse_raw_hdf5_path(self) -> Union[str, Path]:
-        """Trivially raises, but we need to implement the abstractmethod"""
-        return super()._parse_raw_hdf5_path()
-
-    def _parse_raw_image_paths(self) -> List[str]:
-        """
-        Returns a list of paths to the .tiff images recorded during this scan.
-        These are the same paths that were originally recorded during the scan,
-        so will point at some directory in the diamond filesystem.
-        """
-        return [x.decode('utf-8') for x in self.default_signal]
-
-    def _parse_probe_energy(self):
-        """
-        Returns the energy of the probe particle parsed from this NexusFile.
-        """
-        return float(self.nx_instrument.pgm.energy)
-
-    def _parse_pixel_size(self) -> float:
-        """
-        All detectors on I10 have 13.5 micron pixels.
-        """
-        return 13.5e-6
-
-    def _parse_image_shape(self) -> Tuple[int]:
-        """
-        Returns the shape of detector images. This is easy in I10, since they're
-        both 2048**2 square detectors.
-        """
-        return 2048, 2048
-
-    def _parse_motors(self) -> Dict[str, np.ndarray]:
-        """
-        A dictionary of all of the motor positions. This is only useful if you
-        know some diffractometer specific keys, so it's kept private to
-        encourage users to directly access the cleaner theta, two_theta etc.
-        properties.
-        """
-        instr_motor_names = ["th", "tth", "chi"]
-        diff_motor_names = ["theta", "2_theta", "chi"]
-
-        motors_dict = {
-            x: np.ones(self.scan_length) *
-            self.nx_instrument.rasor.diff[y]._value
-            for x, y in zip(instr_motor_names, diff_motor_names)}
-
-        for name in instr_motor_names:
-            try:
-                motors_dict[name] = self.nx_instrument[name].value._value
-            except KeyError:
-                pass
-        return motors_dict
-
-    def _parse_theta(self) -> np.ndarray:
-        """
-        Returns the current theta value of the diffractometer, as parsed from
-        the nexus file. Note that this will be different to thArea in GDA.
-        """
-        return self.motors["th"]
-
-    def _parse_two_theta(self) -> np.ndarray:
-        """
-        Returns the current two-theta value of the diffractometer, as parsed
-        from the nexus file. Note that this will be different to tthArea in GDA.
-        """
-        return self.motors["tth"]
-
-    def _parse_theta_area(self) -> np.ndarray:
-        """
-        Returns the values of the thArea virtual motor during this scan.
-        """
-        return 180 - self.theta
-
-    def _parse_two_theta_area(self) -> np.ndarray:
-        """
-        Returns the values of the tthArea virtual motor during this scan.
-        """
-        return 90 - self.two_theta
-
-    def _parse_chi(self) -> np.ndarray:
-        """
-        Returns the current chi value of the diffractometer.
-        """
-        return 90 - self.motors["chi"]
