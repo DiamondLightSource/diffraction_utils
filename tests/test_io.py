@@ -5,10 +5,8 @@ This module tests diffraction_utils' io module.
 # Of course we need this while testing.
 # pylint: disable=protected-access
 
-import os
 
 import numpy as np
-import pytest
 from numpy.testing import assert_allclose
 
 from diffraction_utils.io import I07Nexus
