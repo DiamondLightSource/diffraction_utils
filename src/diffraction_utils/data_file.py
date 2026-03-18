@@ -5,7 +5,6 @@ returned by different detectors/instruments.
 """
 
 import os
-import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Union
@@ -81,12 +80,47 @@ class DataFileBase(ABC):
                 self.hdf5_internal_path = self._parse_hdf5_internal_path()
                 self.raw_hdf5_path = self._parse_raw_hdf5_path()
                 if locate_local_data:
+                    print("found local data ")
                     self.local_hdf5_path = self._parse_local_hdf5_path()
-                    print(f"making temp copy of {self.local_hdf5_path} ")
-                    local_copy = f"/tmp/{os.path.basename(self.local_hdf5_path)}"
-                    shutil.copy2(self.local_hdf5_path, local_copy)
+                    # parent_dir = Path(self.local_hdf5_path).parent
+                    # h5filelist = [
+                    #     file
+                    #     for file in os.listdir(parent_dir)
+                    #     if Path(self.local_hdf5_path).stem in file
+                    # ]
+                    # print(f"found files to copy {h5filelist} ")
 
-                    self.local_hdf5_path = local_copy
+                    # print(f"DEBUG: parent_dir={parent_dir}", flush=True)
+                    # print(f"DEBUG: Files={h5filelist}", flush=True)
+                    # print(
+                    #     f"DEBUG: sizes={[(f, (parent_dir / f).stat().st_size) for f in h5filelist]}",
+                    #     flush=True,
+                    # )
+
+                    # for file in h5filelist:
+                    #     print(f"Starting copy of {file}", flush=True)
+                    #     src = parent_dir / file
+                    #     dst = Path("/tmp") / file
+                    #     print(f"src exists? {src.exists()}", flush=True)
+                    #     subprocess.check_call(
+                    #         [
+                    #             "rclone",
+                    #             "copyto",
+                    #             src,
+                    #             dst,
+                    #             "--progress",
+                    #             "--transfers=16",
+                    #             "--checkers=16",
+                    #             "--multi-thread-streams=16",
+                    #             "--multi-thread-cutoff=64M",
+                    #         ]
+                    #     )
+                    #     print(f"Finished copy of {file}", flush=True)
+
+                    # print(
+                    #     f"set local_hdf5_path to /tmp/{Path(self.local_hdf5_path).name}"
+                    # )
+                    # self.local_hdf5_path = f"/tmp/{Path(self.local_hdf5_path).name}"
 
             else:
                 self.raw_image_paths = self._parse_raw_image_paths()
