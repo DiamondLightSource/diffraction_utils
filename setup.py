@@ -1,5 +1,5 @@
 """
-latest version created: add_pyfaiponi in diffraction_utils/
+latest version created: create_pyfaiponi in diffraction_utils/
 Simple setup.py file.
 """
 
