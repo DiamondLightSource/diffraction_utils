@@ -841,6 +841,13 @@ class I07Nexus(NexusBase):
             "dpsz",
             "dpsz2",  # DPS values.
         ]
+        motor_names_eh1_fourc = [
+            "fourc.diff1delta", "fourc.diff1gamma",  # Basic motors.
+            "fourc.diff1theta", "fourc.diff1chi", # Basic motors.
+            "dcdomega", "dcdc2rad", "diff1prot",  # DCD values.
+            "dpsx", "dpsy", "dpsz", "dpsz2" # DPS values.
+        ]
+
 
         # The motors of interest in eh2.
         motor_names_eh2 = [
@@ -1305,6 +1312,13 @@ class I07Nexus(NexusBase):
             I07Nexus.pilatus_eh2_stats,
             I07Nexus.pilatus_eh2_scan,
         ]
+
+    @property
+    def is_dectris(self) -> bool:
+        """
+        Returns whether or not detector is a dectris detector
+        """
+        return self.detector_name in [I07Nexus.eiger_detector_01_2026]
 
     @property
     def is_dectris(self) -> bool:

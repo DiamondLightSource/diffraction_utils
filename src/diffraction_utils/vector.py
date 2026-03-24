@@ -1,7 +1,7 @@
 """
 This module stores the Vector class, which is a light wrapper around a numpy
 array. It contains some convenience methods/attributes for dealing with
-coordinate system changes.
+coordinate system changes .
 """
 
 from typing import TYPE_CHECKING
@@ -9,10 +9,9 @@ from typing import TYPE_CHECKING
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-
 if TYPE_CHECKING:
-    from .frame_of_reference import Frame
     from .diffractometer_base import DiffractometerBase
+    from .frame_of_reference import Frame
 
 
 class Vector3:
@@ -21,7 +20,7 @@ class Vector3:
     methods/attributes for dealing with coordinate system changes.
     """
 
-    def __init__(self, array: np.ndarray, frame: 'Frame'):
+    def __init__(self, array: np.ndarray, frame: "Frame"):
         self.array = np.array(array)
         self.frame = frame
 
@@ -46,8 +45,7 @@ class Vector3:
         """
         return self.array / np.linalg.norm(self.array)
 
-    def to_frame(self, frame: 'Frame',
-                 diffractometer: 'DiffractometerBase' = None):
+    def to_frame(self, frame: "Frame", diffractometer: "DiffractometerBase" = None):
         """
         Transforms to a frame with name `frame`.
 
@@ -63,11 +61,7 @@ class Vector3:
         diffractometer.rotate_vector_to_frame(self, frame)
 
     @classmethod
-    def from_angles(cls,
-                    azimuth: float,
-                    polar: float,
-                    frame: 'Frame',
-                    length=1.0):
+    def from_angles(cls, azimuth: float, polar: float, frame: "Frame", length=1.0):
         """
         Constructs a new Vector3 from an azimuthal angle, a polar angle and a
         frame of reference.
@@ -82,11 +76,13 @@ class Vector3:
             length:
                 The length of the new vector. Defaults to 1.0.
         """
-        array = length * np.array([
-            np.sin(polar) * np.sin(azimuth),
-            np.cos(polar),
-            np.sin(polar) * np.cos(azimuth)
-        ])
+        array = length * np.array(
+            [
+                np.sin(polar) * np.sin(azimuth),
+                np.cos(polar),
+                np.sin(polar) * np.cos(azimuth),
+            ]
+        )
         return cls(array, frame)
 
 
@@ -113,8 +109,8 @@ def rot_from_a_to_b(vector_a: Vector3, vector_b: Vector3):
     """
     if vector_a.frame != vector_b.frame:
         raise ValueError(
-            "Vectors must be in the same frame to calculate a rotation "
-            "between them.")
+            "Vectors must be in the same frame to calculate a rotation between them."
+        )
     return _rot_arr_from_a_to_b(vector_a.array, vector_b.array)
 
 

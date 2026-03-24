@@ -1,4 +1,5 @@
 """
+
 Simple setup.py file.
 """
 
@@ -16,7 +17,7 @@ with io.open(join(THIS_DIRECTORY, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='diffraction_utils',
-    version='0.0.1',
+    version='1.0.0',
     license='MIT',
     description='A package designed to simplify working with diffraction data.',
     author='Diamond Light Source',
