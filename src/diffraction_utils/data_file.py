@@ -80,7 +80,6 @@ class DataFileBase(ABC):
                 self.hdf5_internal_path = self._parse_hdf5_internal_path()
                 self.raw_hdf5_path = self._parse_raw_hdf5_path()
                 if locate_local_data:
-                    print("found local data ")
                     self.local_hdf5_path = self._parse_local_hdf5_path()
                     # parent_dir = Path(self.local_hdf5_path).parent
                     # h5filelist = [
