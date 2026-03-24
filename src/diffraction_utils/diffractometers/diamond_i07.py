@@ -7,14 +7,13 @@ for the diffractometer in I07's experimental hutch 1.
 """
 
 import numpy as np
-from scipy.constants import Planck, speed_of_light, elementary_charge
+from scipy.constants import Planck, elementary_charge, speed_of_light
 from scipy.spatial.transform import Rotation
 
 from ..diffractometer_base import DiffractometerBase
 from ..frame_of_reference import Frame
 from ..io import I07Nexus
 from ..vector import Vector3
-
 
 INSB_LATTICE_PARAMETER = 6.479  # In Å.
 
@@ -46,8 +45,9 @@ class I07Diffractometer(DiffractometerBase):
     vertical = "vertical"
     dcd = "DCD"
 
-    def __init__(self, data_file: I07Nexus, sample_oop: np.ndarray,
-                 setup: str = "horizontal") -> None:
+    def __init__(
+        self, data_file: I07Nexus, sample_oop: np.ndarray, setup: str = "horizontal"
+    ) -> None:
         super().__init__(data_file, sample_oop)
         self.setup = setup
 
@@ -112,8 +112,9 @@ class I07Diffractometer(DiffractometerBase):
         # Act this rotation on the [0, 0, 1], which is the vector pointing
         # to the detector when gamma, delta = 0, 0.
         to_detector = np.array([0, 0, 1])
-        detector_vec = Vector3(total_rot.apply(to_detector),
-                               Frame(Frame.lab, self, frame.scan_index))
+        detector_vec = Vector3(
+            total_rot.apply(to_detector), Frame(Frame.lab, self, frame.scan_index)
+        )
         # Finally, rotate this vector into the frame that we need it in.
         self.rotate_vector_to_frame(detector_vec, frame)
         return detector_vec
@@ -156,8 +157,7 @@ class I07Diffractometer(DiffractometerBase):
         beam_crystal_vector = -beam_crystal_vector
 
         # Then simply add the displacement along the z-direction to the sample.
-        beam_crystal_vector += np.array(
-            [0, 0, self._dcd_sample_distance])
+        beam_crystal_vector += np.array([0, 0, self._dcd_sample_distance])
 
         # We're expecting a unit vector.
         beam_crystal_vector /= np.linalg.norm(beam_crystal_vector)
@@ -172,8 +172,7 @@ class I07Diffractometer(DiffractometerBase):
         This is strictly along the direction of the beam as it leaves the
         synchtrotron.
         """
-        return self.data_file.dcd_circle_radius / \
-            np.tan(self._dcd_cone_angle_rad)
+        return self.data_file.dcd_circle_radius / np.tan(self._dcd_cone_angle_rad)
 
     @property
     def _dcd_cone_angle(self):
