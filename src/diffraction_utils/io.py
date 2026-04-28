@@ -26,6 +26,7 @@ import nexusformat.nexus.tree as nx
 import numpy as np
 import pandas as pd
 from nexusformat.nexus import nxload
+from scipy.constants import Planck, elementary_charge, speed_of_light
 
 from .data_file import DataFileBase
 from .frame_of_reference import Frame
@@ -38,6 +39,16 @@ BAD_NEXUS_FILE = (
     "If you're seeing this message, it means some non-essential data couldn't "
     "be parsed by diffraction_utils."
 )
+
+
+def _energy_to_wavelength(energy_in_ev):
+    """
+    Converts the incident beam energy into wavelength in Å.
+
+    Args:
+        Energy of the probe particle in electron volts.
+    """
+    return Planck * speed_of_light / (energy_in_ev * elementary_charge) * 1e10
 
 
 class BadNexusFileError(Exception):
@@ -424,6 +435,7 @@ class I07Nexus(NexusBase):
         self.dpsy = self._parse_dpsy()
         self.dpsz = self._parse_dpsz()
         self.dpsz2 = self._parse_dpsz2()
+        self.default_axis_type = self._parse_default_axis_type()
 
         # Get the UB and U matrices, if they have been stored.
         self.ub_matrix = self._parse_ub()
@@ -733,6 +745,12 @@ class I07Nexus(NexusBase):
         """
         return float(self.nx_instrument.dcm1energy.value) * 1e3
 
+    def _calc_probe_wavelength(self):
+        """
+        converts energy in eV into wavelength in Angstrom
+        """
+        return _energy_to_wavelength(self.probe_energy)
+
     def _parse_pixel_size(self) -> float:
         """
         Returns the side length of pixels in the detector that's being used.
@@ -842,12 +860,18 @@ class I07Nexus(NexusBase):
             "dpsz2",  # DPS values.
         ]
         motor_names_eh1_fourc = [
-            "fourc.diff1delta", "fourc.diff1gamma",  # Basic motors.
-            "fourc.diff1theta", "fourc.diff1chi", # Basic motors.
-            "dcdomega", "dcdc2rad", "diff1prot",  # DCD values.
-            "dpsx", "dpsy", "dpsz", "dpsz2" # DPS values.
+            "fourc.diff1delta",
+            "fourc.diff1gamma",  # Basic motors.
+            "fourc.diff1theta",
+            "fourc.diff1chi",  # Basic motors.
+            "dcdomega",
+            "dcdc2rad",
+            "diff1prot",  # DCD values.
+            "dpsx",
+            "dpsy",
+            "dpsz",
+            "dpsz2",  # DPS values.
         ]
-
 
         # The motors of interest in eh2.
         motor_names_eh2 = [
@@ -861,13 +885,16 @@ class I07Nexus(NexusBase):
         if self._is_eh2:
             motor_names = motor_names_eh2
 
+        fourc_check = any(
+            [val.startswith("fourc") for val in self.nx_instrument.keys()]
+        )
         # Set the fourc names if our detector name is pil3roi.
         fourcnames_eh2 = [I07Nexus.pilatus_eh2_2022, I07Nexus.pilatus_eh2_scan]
-        if self.detector_name in fourcnames_eh2:
+        if (self.detector_name in fourcnames_eh2) and (fourc_check):
             motor_names = motor_names_eh2_fourc
 
         fourcnames_eh1 = [I07Nexus.excalibur_detector_2021]
-        if self.detector_name in fourcnames_eh1:
+        if (self.detector_name in fourcnames_eh1) and (fourc_check):
             motor_names = motor_names_eh1_fourc
 
         motors_dict = {}
@@ -1128,6 +1155,31 @@ class I07Nexus(NexusBase):
             "Your detector changed name again..."
         )
 
+    def _parse_default_axis_type(self) -> str:
+        """
+        Returns the type of our default axis, either being 'q', 'th' or 'tth'.
+        """
+        if self.default_axis_name == "qdcd":
+            return "q"
+        if self.default_axis_name == "diff1chi":
+            return "th"
+        if self.default_axis_name == "diff1delta":
+            return "tth"
+
+        # add in option for EH2 scanning alpha
+        diff2alphanames = ["diff2alpha_value_set", "diff2alpha"]
+        if self.default_axis_name in diff2alphanames:
+            return "th"
+
+        # add in option for EH1 scanning chi
+        if self.default_axis_name == "diff1chi_value_set":
+            return "th"
+
+        # It's also possible that self.default_axis_name isn't recorded in some
+        # nexus files. Just in case, let's check the length of diff1delta.
+        if isinstance(self.nx_instrument["diff1delta"].value.nxdata, np.ndarray):
+            return "tth"
+
     @warn_missing_metadata
     def _parse_signal_regions(self) -> List[Region]:
         """
@@ -1217,7 +1269,8 @@ class I07Nexus(NexusBase):
             return [
                 self._get_ith_region(i) for i in range(2, self._number_of_regions + 1)
             ]
-        if self.detector_name == I07Nexus.excalibur_04_2022:
+        excalibur_roi_list = [I07Nexus.excalibur_04_2022, I07Nexus.excalibur_2022_fscan]
+        if self.detector_name in excalibur_roi_list:
             # Make sure our code executes for bytes and strings.
             try:
                 json_str = self.nx_instrument["ex_rois/excalibur_ROIs"]._value.decode(
