@@ -763,7 +763,7 @@ class I07Nexus(NexusBase):
             return 75e-6
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
-    def _parse_image_shape(self) -> float:
+    def _parse_image_shape(self) -> tuple:
         """
         Returns the shape of the images we expect to be recorded by this
         detector.
@@ -779,16 +779,16 @@ class I07Nexus(NexusBase):
             # this might not be needed, as rotations can be done elsewhere in
             # code
             if self.is_rotated:
-                return 2069, 515
-            return 515, 2069
+                return (2069, 515)
+            return (515, 2069)
         if self.is_pilatus:
             if self.is_rotated:
-                return 1475, 1679
-            return 1679, 1475
+                return (1475, 1679)
+            return (1679, 1475)
         if self.is_dectris:
             if self.is_rotated:
-                return 2068, 2162
-            return 2162, 2068
+                return (2068, 2162)
+            return (2162, 2068)
         raise ValueError(f"Detector name {self.detector_name} is unknown.")
 
     def _parse_raw_image_paths(self):
@@ -973,11 +973,11 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2delta"]
             except KeyError:
                 return self.motors["fourc.diff2delta"]
-        if self.is_eh1:
-            try:
-                return self.motors["diff1delta"]
-            except KeyError:
-                return self.motors["fourc.diff1delta"]
+
+        try:
+            return self.motors["diff1delta"]
+        except KeyError:
+            return self.motors["fourc.diff1delta"]
 
     def _parse_gamma(self) -> np.ndarray:
         """
@@ -998,11 +998,11 @@ class I07Nexus(NexusBase):
                 return self.motors["diff2gamma"]
             except KeyError:
                 return self.motors["fourc.diff2gamma"]
-        if self.is_eh1:
-            try:
-                return self.motors["diff1gamma"]
-            except KeyError:
-                return self.motors["fourc.diff1gamma"]
+
+        try:
+            return self.motors["diff1gamma"]
+        except KeyError:
+            return self.motors["fourc.diff1gamma"]
 
     def _parse_omega(self) -> np.ndarray:
         """
@@ -1365,13 +1365,6 @@ class I07Nexus(NexusBase):
             I07Nexus.pilatus_eh2_stats,
             I07Nexus.pilatus_eh2_scan,
         ]
-
-    @property
-    def is_dectris(self) -> bool:
-        """
-        Returns whether or not detector is a dectris detector
-        """
-        return self.detector_name in [I07Nexus.eiger_detector_01_2026]
 
     @property
     def is_dectris(self) -> bool:
