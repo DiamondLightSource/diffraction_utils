@@ -996,7 +996,7 @@ class I07Nexus(NexusBase):
         # important, because moving the diffractometer arm out of the way for
         # dps experiments means that this often ends up at around 90 degrees!
         # also need to set to zero if using p2m without dps
-        if (self.detector_info is p2m_detector_info) or (self.using_dps):
+        if (type(self.detector_info) in [p2m_detector_info, eiger_detector_info]) or (self.using_dps):
             return np.zeros((self.scan_length))
         if self.is_eh2:
             self._parse_diff2motor(name)
@@ -1175,7 +1175,7 @@ class I07Nexus(NexusBase):
         if self.detector_info.name == "excroi":
             return [self._get_ith_region(i=1)]
         # This attempts to parse an invalid json file.
-        if self.detector_info.name == I07Nexus.excalibur_04_2022:
+        if self.detector_info.name == I07Nexus.excalibur_04_2022.name:
             # Make sure our code executes for bytes and strings.
             try:
                 json_str = self.nx_instrument["ex_rois/excalibur_ROIs"]._value.decode(
@@ -1191,7 +1191,7 @@ class I07Nexus(NexusBase):
             roi_dict = json.loads(json_str)
             return [Region.from_dict(roi_dict["Region_1"])]
 
-        if self.detector_info.name == I07Nexus.excalibur_08_2023_roi:
+        if self.detector_info.name == I07Nexus.excalibur_08_2023_roi.name:
             regionsfull = list(
                 filter(lambda x: "Region" in x, self.nx_instrument.excroi.keys())
             )
@@ -1213,10 +1213,10 @@ class I07Nexus(NexusBase):
             # use similar setting to other version where it returns just the
             # region of region1
             return [Region.from_dict(total_dict["Region_1"])]
-        if self.detector_info.name == I07Nexus.excalibur_2022_fscan:
+        if self.detector_info.name == I07Nexus.excalibur_2022_fscan.name:
             # Just ignore the region of interest for fscans.
             return
-        if self.detector_info.name == I07Nexus.excalibur_08_2023_stats:
+        if self.detector_info.name == I07Nexus.excalibur_08_2023_stats.name:
             # Just ignore use of regions if using excstats.
             return
         raise NotImplementedError()
