@@ -430,7 +430,7 @@ class I07Nexus(NexusBase):
         # initialization.
         self.nxfile = nxload(local_path)
         self.nx_entry = self._parse_nx_entry()
-        self.detector_info = self._parse_detector_name()
+        self.detector_info = self._parse_detector_info()
 
         # Initially, just set the detector rotation to be 0. This will be parsed
         # properly later, but some value is needed to run super().__init__()
@@ -481,6 +481,7 @@ class I07Nexus(NexusBase):
         self.dpsz = self._parse_dpsz()
         self.dpsz2 = self._parse_dpsz2()
         self.default_axis_type = self._parse_default_axis_type()
+        self.probe_energy = self._parse_probe_energy()
 
         # Get the UB and U matrices, if they have been stored.
         self.ub_matrix = self._parse_ub()
@@ -974,109 +975,76 @@ class I07Nexus(NexusBase):
         if self.is_eh1:
             return self.motors["dcdomega"]
 
-    def _parse_diff_motor(self, name: str):
-        if self.is_eh2:
-            try:
-                return self.motors[f"diff2{name}"]
-            except KeyError:
-                return self.motors[f"fourc.diff2{name}"]
+    def _parse_diff2motor(self, name: str, zeros: bool = False):
+        try:
+            return self.motors[f"diff2{name}"]
+        except KeyError:
+            if zeros:
+                return np.zeros((self.scan_length))
+            return self.motors[f"fourc.diff2{name}"]
 
+    def _parse_diff1motor(self, name: str, zeros: bool = False):
         try:
             return self.motors[f"diff1{name}"]
         except KeyError:
+            if zeros:
+                return np.zeros((self.scan_length))
             return self.motors[f"fourc.diff1{name}"]
 
-    def _parse_delta(self) -> np.ndarray:
-        """
-        Returns a numpy array of the delta values throughout the scan.
-        """
+    def _parse_diff_motor(self, name: str):
         # Force set this to zero if we're using the DPS system. This is
         # important, because moving the diffractometer arm out of the way for
         # dps experiments means that this often ends up at around 90 degrees!
         # also need to set to zero if using p2m without dps
         if (self.detector_info is p2m_detector_info) or (self.using_dps):
             return np.zeros((self.scan_length))
+        if self.is_eh2:
+            self._parse_diff2motor(name)
+        return self._parse_diff1motor(name)
+
+    def _parse_delta(self) -> np.ndarray:
+        """
+        Returns a numpy array of the delta values throughout the scan.
+        """
         return self._parse_diff_motor("delta")
 
     def _parse_gamma(self) -> np.ndarray:
         """
         Returns a numpy array of the gamma values throughout the scan.
         """
-        # Force set this to zero if we're using the DPS system. This is
-        # important, because moving the diffractometer arm out of the way for
-        # dps experiments means that this could take any value!
-        if (self.detector_info is p2m_detector_info) or (self.using_dps):
-            return np.zeros((self.scan_length))
         return self._parse_diff_motor("gamma")
-
-    def _parse_hex_motor(self, name: str):
-        if self.is_eh2:
-            try:
-                return self.motors[f"diff2{name}"]
-            except KeyError:
-                return self.motors[f"fourc.diff2{name}"]
-        try:
-            return self.motors[f"diff1{name}"]
-        except KeyError:
-            return np.zeros((self.scan_length))
 
     def _parse_omega(self) -> np.ndarray:
         """
         Returns a numpy array of the omega values throughout the scan.
         """
         if self.is_eh2:
-            try:
-                return self.motors["diff2omega"]
-            except KeyError:
-                return self.motors["fourc.diff2omega"]
-        try:
-            return self.motors["diff1omega"]
-        except KeyError:
-            return np.zeros((self.scan_length))
+            return self._parse_diff2motor("omega")
+        return self._parse_diff1motor(name="omega", zeros=True)
 
     def _parse_alpha(self) -> np.ndarray:
         """
         Returns a numpy array of the alpha values throughout the scan.
         """
         if self.is_eh2:
-            try:
-                return self.motors["diff2alpha"]
-            except KeyError:
-                return self.motors["fourc.diff2alpha"]
-        try:
-            return self.motors["diff1alpha"]
-        except KeyError:
-            return np.zeros((self.scan_length))
+            return self._parse_diff2motor("alpha")
+        return self._parse_diff1motor(name="alpha", zeros=True)
 
     def _parse_theta(self) -> np.ndarray:
         """
         Returns a numpy array of the theta values throughout the scan.
         """
         if self.is_eh1:
-            try:
-                return self.motors["diff1theta"]
-            except KeyError:
-                return self.motors["fourc.diff1theta"]
-
-        # In eh2, just return a bunch of zeros. In reality, there isn't a
-        # diff2theta field, but we can equivalently represent that by an array
-        # of zeroes.
-        return np.zeros((self.scan_length))
+            return self._parse_diff1motor(name="theta")
+        return self._parse_diff2motor(name="theta", zeros=True)
 
     def _parse_chi(self) -> np.ndarray:
         """
         Returns a numpy array of the chi values throughout the scan.
         """
         if self.is_eh1:
-            try:
-                return self.motors["diff1chi"]
-            except KeyError:
-                return self.motors["fourc.diff1chi"]
-
-        # In eh2, just return a bunch of zeros. In reality, there isn't a
-        # diff2chi field, but we can equivalently represent that by an array
-        # of zeroes.
-        return np.zeros((self.scan_length))
+            return self._parse_diff1motor(name="chi")
+        return self._parse_diff2motor(name="chi", zeros=True)
 
     def _parse_detector_rot(self) -> float:
         """
@@ -1115,7 +1083,7 @@ class I07Nexus(NexusBase):
         if self.is_eh1:
             return self.motors["dpsz2"] / 1e3
 
-    def _parse_detector_name(self) -> detector_info:
+    def _parse_detector_info(self) -> detector_info:
         """
         Returns the name of the detector that we're using. Because life sucks,
         this is a function of time.
@@ -1379,7 +1347,7 @@ class I07Nexus(NexusBase):
     @property
     def is_eiger(self) -> bool:
         """
-        Returns whether or not detector is a dectris detector
+        Returns whether or not detector is a eiger detector
         """
         return self.detector_info.is_eiger
 
