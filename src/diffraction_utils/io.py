@@ -976,30 +976,36 @@ class I07Nexus(NexusBase):
             return self.motors["dcdomega"]
 
     def _parse_diff2motor(self, name: str, zeros: bool = False):
-        try:
+        if f"diff2{name}" in self.motors.keys():
             return self.motors[f"diff2{name}"]
-        except KeyError:
-            if zeros:
-                return np.zeros((self.scan_length))
+        if zeros:
+            return np.zeros((self.scan_length))
+        if f"fourc.diff2{name}" in self.motors.keys():
             return self.motors[f"fourc.diff2{name}"]
+        else:
+            raise KeyError(f"values not found for motor {name}")
 
     def _parse_diff1motor(self, name: str, zeros: bool = False):
-        try:
+        if f"diff1{name}" in self.motors.keys():
             return self.motors[f"diff1{name}"]
-        except KeyError:
-            if zeros:
-                return np.zeros((self.scan_length))
+        if zeros:
+            return np.zeros((self.scan_length))
+        if f"fourc.diff1{name}" in self.motors.keys():
             return self.motors[f"fourc.diff1{name}"]
+        else:
+            raise KeyError(f"values not found for motor {name}")
 
     def _parse_diff_motor(self, name: str):
         # Force set this to zero if we're using the DPS system. This is
         # important, because moving the diffractometer arm out of the way for
         # dps experiments means that this often ends up at around 90 degrees!
         # also need to set to zero if using p2m without dps
-        if (type(self.detector_info) in [p2m_detector_info, eiger_detector_info]) or (self.using_dps):
+        if (type(self.detector_info) in [p2m_detector_info, eiger_detector_info]) or (
+            self.using_dps
+        ):
             return np.zeros((self.scan_length))
         if self.is_eh2:
-            self._parse_diff2motor(name)
+            return self._parse_diff2motor(name)
         return self._parse_diff1motor(name)
 
     def _parse_delta(self) -> np.ndarray:
