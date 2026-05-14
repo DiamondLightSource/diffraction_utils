@@ -1,5 +1,5 @@
 """
-latest version created: add_ivschi in diffraction_utils/
+latest version created: writing_module in diffraction_utils/
 Simple setup.py file.
 """
 
