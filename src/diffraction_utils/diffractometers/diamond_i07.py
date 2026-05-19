@@ -7,7 +7,6 @@ for the diffractometer in I07's experimental hutch 1.
 """
 
 import numpy as np
-from scipy.constants import Planck, elementary_charge, speed_of_light
 from scipy.spatial.transform import Rotation
 
 from ..diffractometer_base import DiffractometerBase
@@ -16,16 +15,6 @@ from ..io import I07Nexus
 from ..vector import Vector3
 
 INSB_LATTICE_PARAMETER = 6.479  # In Å.
-
-
-def _energy_to_wavelength(energy_in_ev):
-    """
-    Converts the incident beam energy into wavelength in Å.
-
-    Args:
-        Energy of the probe particle in electron volts.
-    """
-    return Planck * speed_of_light / (energy_in_ev * elementary_charge) * 1e10
 
 
 class I07Diffractometer(DiffractometerBase):
@@ -199,9 +188,8 @@ class I07Diffractometer(DiffractometerBase):
         Returns the scattering theta of the InSb (111) reflection. Needed to
         calculate the incident beam orientation in the DCD setup.
         """
-        wavelength = _energy_to_wavelength(self.data_file.probe_energy)
         d_111 = INSB_LATTICE_PARAMETER / np.sqrt(3)
-        return np.arcsin(wavelength / (2 * d_111)) * 180 / np.pi
+        return np.arcsin(self.data_file.probe_wavelength / (2 * d_111)) * 180 / np.pi
 
     @property
     def _insb_220_theta(self):
@@ -209,6 +197,5 @@ class I07Diffractometer(DiffractometerBase):
         Returns the scattering theta of the InSb (220) reflection. Needed to
         calculate the incident beam orientation in the DCD setup.
         """
-        wavelength = _energy_to_wavelength(self.data_file.probe_energy)
         d_220 = INSB_LATTICE_PARAMETER / np.sqrt(8)
-        return np.arcsin(wavelength / (2 * d_220)) * 180 / np.pi
+        return np.arcsin(self.data_file.probe_wavelength / (2 * d_220)) * 180 / np.pi

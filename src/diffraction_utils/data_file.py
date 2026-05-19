@@ -63,6 +63,7 @@ class DataFileBase(ABC):
 
         # Run the various parsers to initialize non-trivial attributes.
         self.probe_energy = self._parse_probe_energy()
+        self.probe_wavelength = self._calc_probe_wavelength()
         self.default_axis_name = self._parse_default_axis_name()
         self.default_signal_name = self._parse_default_signal_name()
         self.default_axis = self._parse_default_axis()
@@ -145,6 +146,12 @@ class DataFileBase(ABC):
 
     @abstractmethod
     def _parse_probe_energy(self):
+        """
+        The energy of the probe particle, in eV.
+        """
+
+    @abstractmethod
+    def _calc_probe_wavelength(self):
         """
         The energy of the probe particle, in eV.
         """
@@ -326,7 +333,7 @@ def _try_to_find_files(filenames: List[str], additional_search_paths: List[str])
     firstfile = filenames[0].split("/")[-1]
     # assume if first file is found that paths are good
     if os.path.exists(localpath / firstfile):
-        found_files = [localpath / file.split("/")[-1] for file in filenames]
+        found_files = [str(localpath / file.split("/")[-1]) for file in filenames]
         return found_files
 
     # This function was written to handle strings, not pathlib.Paths.
