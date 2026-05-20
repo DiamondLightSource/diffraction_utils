@@ -330,6 +330,15 @@ class detector_info:
     is_pilatus: bool = False
     is_eiger: bool = False
     is_excalibur: bool = False
+    is_none: bool = False
+
+
+@dataclass
+class detector_not_found(detector_info):
+    name: str
+    pixel_size: float = 0.0
+    image_shape: tuple = (0, 0)
+    is_none: bool = True
 
 
 @dataclass
@@ -408,6 +417,7 @@ class I07Nexus(NexusBase):
     pilatus_eh2_scan = p100k_detector_info("p3r")
 
     eiger_detector_01_2026 = eiger_detector_info(name="eir")
+    none_detector = detector_not_found(name="none")
     # Setups.
     horizontal = "horizontal"
     vertical = "vertical"
@@ -431,6 +441,8 @@ class I07Nexus(NexusBase):
         self.nxfile = nxload(local_path)
         self.nx_entry = self._parse_nx_entry()
         self.detector_info = self._parse_detector_info()
+        if type(self.detector_info) is detector_not_found:
+            return
 
         # Initially, just set the detector rotation to be 0. This will be parsed
         # properly later, but some value is needed to run super().__init__()
@@ -1111,20 +1123,6 @@ class I07Nexus(NexusBase):
         }
         # assuming duplicate value is from obsolete naming - "excroi":I07Nexus.excalibur_detector_2021,
 
-        # instrument_checknames = {
-        #     "excroi": I07Nexus.excalibur_08_2023_roi,
-        #     "exr": I07Nexus.excalibur_04_2022,
-        #     "pil2roi": I07Nexus.pilatus_2021,
-        #     "PILATUS": I07Nexus.pilatus_2022,
-        #     "pil2stats": I07Nexus.pilatus_2_stats,
-        #     "p2r": I07Nexus.p2r,
-        #     "EXCALIBUR": I07Nexus.excalibur_2022_fscan,
-        #     "pil3roi": I07Nexus.pilatus_eh2_2022,
-        #     "pil3stats": I07Nexus.pilatus_eh2_stats,
-        #     "p3r": I07Nexus.pilatus_eh2_scan,
-        #     "eir": I07Nexus.eiger_detector_01_2026,
-        # }
-
         for key, val in checknames.items():
             if key in self.nx_entry:
                 return val
@@ -1132,18 +1130,8 @@ class I07Nexus(NexusBase):
         for key, val in checknames.items():
             if key in self.nx_entry.NXinstrument[0]:
                 return val
-
+        return I07Nexus.none_detector
         # pylint: disable=invalid-name
-
-        class GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(Exception):
-            """
-            Extra special exception to raise when the detector name changes.
-            """
-
-        # Couldn't recognise the detector.
-        raise GOD_DAMNIT_FIX_YOUR_NXDETECTOR_Error(
-            "Your detector changed name again..."
-        )
 
     def _parse_default_axis_type(self) -> str:
         """
