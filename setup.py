@@ -1,5 +1,5 @@
 """
-latest version created: mask_issue in diffraction_utils/
+latest version created: det_info_issue in diffraction_utils/
 Simple setup.py file.
 """
 
