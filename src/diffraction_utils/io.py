@@ -932,7 +932,8 @@ class I07Nexus(NexusBase):
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
-        for name in motor_names:
+        found_motor_names = [name for name in motor_names if name in self.nx_instrument.keys()]
+        for name in found_motor_names:
             # This could be a link to the data, a single value or a numpy array
             # containing varying values. We need to handle all three cases. The
             # last two cases are handled by multiplying by an array of ones.
@@ -1098,7 +1099,7 @@ class I07Nexus(NexusBase):
         """
         Returns the z2-value of the DPS system. Division by 1e3 converts to m.
         """
-        if self.is_eh1:
+        if (self.is_eh1)&("dpsz2" in self.motors.keys()):
             return self.motors["dpsz2"] / 1e3
 
     def _parse_detector_info(self) -> detector_info:
