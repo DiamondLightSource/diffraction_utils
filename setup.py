@@ -15,6 +15,8 @@ THIS_DIRECTORY = abspath(dirname(__file__))
 with io.open(join(THIS_DIRECTORY, 'README.md'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
+python_module_list = [splitext(basename(path))[0] for path in glob('src/*.py')]
+
 setup(
     name='diffraction_utils',
     version='1.0.0',
@@ -26,7 +28,7 @@ setup(
     long_decription_content_type='text/markdown',
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+    py_modules= python_module_list,
     include_package_data=True,
     zip_safe=False,
     classifiers=[
