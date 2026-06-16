@@ -6,7 +6,6 @@ Simple setup.py file.
 import io
 from glob import glob
 from os.path import basename, dirname, join, splitext, abspath
-import os
 from setuptools import find_packages
 from setuptools import setup
 
@@ -15,8 +14,8 @@ THIS_DIRECTORY = abspath(dirname(__file__))
 with io.open(join(THIS_DIRECTORY, 'README.md'), encoding='utf-8') as f:
     LONG_DESCRIPTION = f.read()
 
-python_module_list = [file for file in os.listdir("src/") if file.endswith(".py")]
-#python_module_list = [splitext(basename(path))[0] for path in glob('src/*.py')]
+
+python_module_list = [splitext(basename(path))[0] for path in glob('src/*.py')]
 
 setup(
     name='diffraction_utils',
