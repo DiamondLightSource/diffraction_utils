@@ -1,16 +1,15 @@
 """
-latest version created: parsing_detector in diffraction_utils/
+latest version created: multi_config in diffraction_utils/
 Simple setup.py file.
 """
 
-import io
 from glob import glob
 from os.path import abspath, basename, dirname, join, splitext
 
 from setuptools import find_packages, setup
 
 THIS_DIRECTORY = abspath(dirname(__file__))
-with io.open(join(THIS_DIRECTORY, "README.md"), encoding="utf-8") as f:
+with open(join(THIS_DIRECTORY, "README.md"), encoding="utf-8") as f:
     LONG_DESCRIPTION = f.read()
 
 
