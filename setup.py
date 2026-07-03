@@ -1,5 +1,5 @@
 """
-latest version created: fix_pyqt_issue in diffraction_utils/
+latest version created: parsing_detector in diffraction_utils/
 Simple setup.py file.
 """
 
