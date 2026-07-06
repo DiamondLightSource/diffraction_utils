@@ -410,6 +410,7 @@ class I07Nexus(NexusBase):
     p2r = p2m_detector_info(name="p2r")
     pilatus_2021 = p2m_detector_info(name="pil2roi")
     pilatus_2_stats = p2m_detector_info(name="pil2stats")
+    pilatus_p2m = p2m_detector_info(name = "PILATUS")
 
     pilatus_2022 = p100k_detector_info(name="PILATUS")
     pilatus_eh2_2022 = p100k_detector_info("pil3roi")
@@ -1107,6 +1108,13 @@ class I07Nexus(NexusBase):
         Returns the name of the detector that we're using. Because life sucks,
         this is a function of time.
         """
+
+        detector_keynames = ["exr", "pil2roi","PILATUS", "pil2stats","p2r",   \
+                        "EXCALIBUR", "pil3roi", "pil3stats", "p3r","excroi", "eir", "excstats"] 
+        found_det_keys = [key for key in entry.keys() if key in detector_keynames]
+        endings = ['data', "image_data"]
+        found_data_keys = [f"{found_det_keys[0]}_{ending}" for ending in endings if f"{found_det_keys[0]}_{ending}" in entry.keys()]
+
         checknames = {
             "exr": I07Nexus.excalibur_04_2022,
             "pil2roi": I07Nexus.pilatus_2021,
@@ -1122,10 +1130,12 @@ class I07Nexus(NexusBase):
             "excstats": I07Nexus.excalibur_08_2023_stats,
         }
         # assuming duplicate value is from obsolete naming - "excroi":I07Nexus.excalibur_detector_2021,
-
+        found_keys = []
         for key, val in checknames.items():
             if key in self.nx_entry:
-                return val
+                found_keys.append(key)
+        if len(found_keys)==1:
+            return checknames[found_keys[0]]
 
         for key, val in checknames.items():
             if key in self.nx_entry.NXinstrument[0]:
