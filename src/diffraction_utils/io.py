@@ -401,24 +401,14 @@ class I07Nexus(NexusBase):
             even when it isn't in use.
     """
 
-    # Detectors.
-    excalibur_04_2022 = excalibur_detector_info(name="exr")
-    excalibur_2022_fscan = excalibur_detector_info(name="EXCALIBUR")
-    excalibur_08_2023_stats = excalibur_detector_info(name="excstats")
-    excalibur_08_2023_roi = excalibur_detector_info(name="excroi")
+    detector_size_dict = {
+        (515, 2069): excalibur_detector_info,
+        (1679, 1475): p2m_detector_info,
+        (195, 487): p100k_detector_info,
+        (2162, 2068): eiger_detector_info,
+        (0, 0): detector_not_found,
+    }
 
-    p2r = p2m_detector_info(name="p2r")
-    pilatus_2021 = p2m_detector_info(name="pil2roi")
-    pilatus_2_stats = p2m_detector_info(name="pil2stats")
-    pilatus_p2m = p2m_detector_info(name = "PILATUS")
-
-    pilatus_2022 = p100k_detector_info(name="PILATUS")
-    pilatus_eh2_2022 = p100k_detector_info("pil3roi")
-    pilatus_eh2_stats = p100k_detector_info("pil3stats")
-    pilatus_eh2_scan = p100k_detector_info("p3r")
-
-    eiger_detector_01_2026 = eiger_detector_info(name="eir")
-    none_detector = detector_not_found(name="none")
     # Setups.
     horizontal = "horizontal"
     vertical = "vertical"
@@ -933,7 +923,9 @@ class I07Nexus(NexusBase):
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
-        found_motor_names = [name for name in motor_names if name in self.nx_instrument.keys()]
+        found_motor_names = [
+            name for name in motor_names if name in self.nx_instrument.keys()
+        ]
         for name in found_motor_names:
             # This could be a link to the data, a single value or a numpy array
             # containing varying values. We need to handle all three cases. The
@@ -1100,7 +1092,7 @@ class I07Nexus(NexusBase):
         """
         Returns the z2-value of the DPS system. Division by 1e3 converts to m.
         """
-        if (self.is_eh1)&("dpsz2" in self.motors.keys()):
+        if (self.is_eh1) & ("dpsz2" in self.motors.keys()):
             return self.motors["dpsz2"] / 1e3
 
     def _parse_detector_info(self) -> detector_info:
@@ -1109,39 +1101,38 @@ class I07Nexus(NexusBase):
         this is a function of time.
         """
 
-        detector_keynames = ["exr", "pil2roi","PILATUS", "pil2stats","p2r",   \
-                        "EXCALIBUR", "pil3roi", "pil3stats", "p3r","excroi", "eir", "excstats"] 
-        found_det_keys = [key for key in entry.keys() if key in detector_keynames]
-        endings = ['data', "image_data"]
-        found_data_keys = [f"{found_det_keys[0]}_{ending}" for ending in endings if f"{found_det_keys[0]}_{ending}" in entry.keys()]
+        detector_keynames = [
+            "exr",
+            "pil2roi",
+            "PILATUS",
+            "pil2stats",
+            "p2r",
+            "EXCALIBUR",
+            "pil3roi",
+            "pil3stats",
+            "p3r",
+            "excroi",
+            "eir",
+            "excstats",
+        ]
+        found_det_keys = [key for key in self.entry.keys() if key in detector_keynames]
+        endings = ["data", "image_data"]
+        found_data_keys = [
+            f"{found_det_keys[0]}_{ending}"
+            for ending in endings
+            if f"{found_det_keys[0]}_{ending}" in self.entry.keys()
+        ]
 
-        checknames = {
-            "exr": I07Nexus.excalibur_04_2022,
-            "pil2roi": I07Nexus.pilatus_2021,
-            "PILATUS": I07Nexus.pilatus_2022,
-            "pil2stats": I07Nexus.pilatus_2_stats,
-            "p2r": I07Nexus.p2r,
-            "EXCALIBUR": I07Nexus.excalibur_2022_fscan,
-            "pil3roi": I07Nexus.pilatus_eh2_2022,
-            "pil3stats": I07Nexus.pilatus_eh2_stats,
-            "p3r": I07Nexus.pilatus_eh2_scan,
-            "excroi": I07Nexus.excalibur_08_2023_roi,
-            "eir": I07Nexus.eiger_detector_01_2026,
-            "excstats": I07Nexus.excalibur_08_2023_stats,
-        }
-        # assuming duplicate value is from obsolete naming - "excroi":I07Nexus.excalibur_detector_2021,
-        found_keys = []
-        for key, val in checknames.items():
-            if key in self.nx_entry:
-                found_keys.append(key)
-        if len(found_keys)==1:
-            return checknames[found_keys[0]]
+        image_shape = (0, 0)
+        found_phrase = "none"
+        if len(found_data_keys) > 0:
+            found_phrase = found_data_keys[0]
+            image_shape = self.entry[found_phrase].shape[-2:]
+        elif len(found_det_keys) > 0:
+            found_phrase = found_det_keys[0]
+            image_shape = self.entry[found_phrase].shape[-2:]
 
-        for key, val in checknames.items():
-            if key in self.nx_entry.NXinstrument[0]:
-                return val
-        return I07Nexus.none_detector
-        # pylint: disable=invalid-name
+        return I07Nexus.detector_size_dict[image_shape](name=found_phrase)
 
     def _parse_default_axis_type(self) -> str:
         """
