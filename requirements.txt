@@ -1,7 +1,7 @@
 nexusformat
-numpy==1.24.4
+numpy==1.26.4
 scipy
-h5py
+5py
 pytest
 pillow
 pandas
