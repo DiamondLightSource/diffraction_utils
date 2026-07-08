@@ -1,6 +1,6 @@
 nexusformat==2.0.2
 numpy==1.23.0
-scipy==1.23.0
+scipy==1.13.1
 h5py==3.16.0
 pytest==9.1.0
 pillow==12.2.0
