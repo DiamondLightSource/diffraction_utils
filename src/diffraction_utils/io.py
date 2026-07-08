@@ -1115,22 +1115,24 @@ class I07Nexus(NexusBase):
             "eir",
             "excstats",
         ]
-        found_det_keys = [key for key in self.entry.keys() if key in detector_keynames]
+        found_det_keys = [
+            key for key in self.nx_entry.keys() if key in detector_keynames
+        ]
         endings = ["data", "image_data"]
         found_data_keys = [
             f"{found_det_keys[0]}_{ending}"
             for ending in endings
-            if f"{found_det_keys[0]}_{ending}" in self.entry.keys()
+            if f"{found_det_keys[0]}_{ending}" in self.nx_entry.keys()
         ]
 
         image_shape = (0, 0)
         found_phrase = "none"
         if len(found_data_keys) > 0:
             found_phrase = found_data_keys[0]
-            image_shape = self.entry[found_phrase].shape[-2:]
+            image_shape = self.nx_entry[found_phrase].shape[-2:]
         elif len(found_det_keys) > 0:
             found_phrase = found_det_keys[0]
-            image_shape = self.entry[found_phrase].shape[-2:]
+            image_shape = self.nx_entry[found_phrase].shape[-2:]
 
         return I07Nexus.detector_size_dict[image_shape](name=found_phrase)
 
