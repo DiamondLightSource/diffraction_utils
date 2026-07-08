@@ -1,7 +1,7 @@
-nexusformat
-numpy==1.26.4
-scipy
-h5py
-pytest
-pillow
-pandas
+nexusformat==2.0.2
+numpy==1.23.0
+scipy==1.23.0
+h5py==3.16.0
+pytest==9.1.0
+pillow==12.2.0
+pandas==2.3.3
