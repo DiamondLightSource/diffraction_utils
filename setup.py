@@ -5,50 +5,45 @@ Simple setup.py file.
 
 import io
 from glob import glob
-from os.path import basename, dirname, join, splitext, abspath
-from setuptools import find_packages
-from setuptools import setup
+from os.path import abspath, basename, dirname, join, splitext
 
+from setuptools import find_packages, setup
 
 THIS_DIRECTORY = abspath(dirname(__file__))
-with io.open(join(THIS_DIRECTORY, 'README.md'), encoding='utf-8') as f:
+with io.open(join(THIS_DIRECTORY, "README.md"), encoding="utf-8") as f:
     LONG_DESCRIPTION = f.read()
 
 
-python_module_list = [splitext(basename(path))[0] for path in glob('src/*.py')]
+python_module_list = [splitext(basename(path))[0] for path in glob("src/*.py")]
 
 setup(
-    name='diffraction_utils',
-    version='1.0.0',
-    license='MIT',
-    description='A package designed to simplify working with diffraction data.',
-    author='Diamond Light Source',
-    author_email='philip.mousley@diamond.ac.uk',
+    name="diffraction_utils",
+    version="1.0.0",
+    license="MIT",
+    description="A package designed to simplify working with diffraction data.",
+    author="Diamond Light Source",
+    author_email="philip.mousley@diamond.ac.uk",
     long_description=LONG_DESCRIPTION,
-    long_decription_content_type='text/markdown',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    py_modules= python_module_list,
+    long_decription_content_type="text/markdown",
+    packages=find_packages("src"),
+    package_dir={"": "src"},
+    py_modules=python_module_list,
     include_package_data=True,
     zip_safe=False,
     classifiers=[
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
-        'Natural Language :: English',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: Implementation :: CPython',
-        'Topic :: Scientific/Engineering',
-        'Topic :: Scientific/Engineering :: Chemistry',
-        'Topic :: Scientific/Engineering :: Physics'
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Natural Language :: English",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "Topic :: Scientific/Engineering :: Physics",
     ],
-    setup_requires=[
-        'numpy', 'scipy', 'nexusformat'
-    ],
-    install_requires=[
-        'numpy', 'scipy', 'nexusformat'
-    ],
+    setup_requires=["numpy", "scipy", "nexusformat"],
+    install_requires=["numpy", "scipy", "nexusformat"],
 )
