@@ -1139,9 +1139,15 @@ class I07Nexus(NexusBase):
         signal_string = self.nx_entry[found_phrase].signal
         if signal_string == "data":
             image_shape = self.nx_entry[found_phrase][signal_string].shape[-2:]
-            return I07Nexus.detector_size_dict[image_shape](name=found_phrase)
+            return I07Nexus.detector_size_dict[image_shape](
+                name=found_phrase.split("_")[0]
+            )
 
-        image_string = str(self.nx_entry[found_phrase][signal_string][0]).split("/")[-1]
+        image_string = (
+            str(self.nx_entry[found_phrase][signal_string].nxdata[0][0])
+            .split("/")[-1]
+            .strip("'")
+        )
         image_ends = [".tif", ".tiff"]
         if any(image_string.endswith(ending) for ending in image_ends):
             image_shape = np.array(
@@ -1159,7 +1165,7 @@ class I07Nexus(NexusBase):
         #     image_path = self.local_image_paths[image_number]
         #     return np.array(PILImageModule.open(image_path))
 
-        return I07Nexus.detector_size_dict[image_shape](name=found_phrase)
+        return I07Nexus.detector_size_dict[image_shape](name=found_phrase.split("_")[0])
 
     def _parse_default_axis_type(self) -> str:
         """
