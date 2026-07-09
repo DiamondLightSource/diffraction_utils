@@ -26,6 +26,7 @@ from warnings import warn
 import nexusformat.nexus.tree as nx
 import numpy as np
 import pandas as pd
+import PIL
 from nexusformat.nexus import nxload
 from scipy.constants import Planck, elementary_charge, speed_of_light
 
@@ -429,6 +430,8 @@ class I07Nexus(NexusBase):
 
         # We need to know what detector we're using before doing any further
         # initialization.
+        self.local_path = local_path
+        self.local_data_path = local_data_path
         self.nxfile = nxload(local_path)
         self.nx_entry = self._parse_nx_entry()
         self.detector_info = self._parse_detector_info()
@@ -836,7 +839,7 @@ class I07Nexus(NexusBase):
         camera, which we can parse exploiting the fact that we work out what
         the detector name is elsewhere.
         """
-        return self.nx_instrument[self.detector_info.name]
+        return self.nx_instrument[self.detector_info.name.split("_")[0]]
 
     def _parse_motors(self) -> Dict[str, np.ndarray]:
         """
@@ -1129,10 +1132,32 @@ class I07Nexus(NexusBase):
         found_phrase = "none"
         if len(found_data_keys) > 0:
             found_phrase = found_data_keys[0]
-            image_shape = self.nx_entry[found_phrase].shape[-2:]
+
         elif len(found_det_keys) > 0:
             found_phrase = found_det_keys[0]
-            image_shape = self.nx_entry[found_phrase].shape[-2:]
+
+        signal_string = self.nx_entry[found_phrase].signal
+        if signal_string == "data":
+            image_shape = self.nx_entry[found_phrase][signal_string].shape[-2:]
+            return I07Nexus.detector_size_dict[image_shape](name=found_phrase)
+
+        image_string = str(self.nx_entry[found_phrase][signal_string][0]).split("/")[-1]
+        image_ends = [".tif", ".tiff"]
+        if any(image_string.endswith(ending) for ending in image_ends):
+            image_shape = np.array(
+                PIL.Image.open(self.local_data_path + "/" + image_string)
+            ).shape[-2:]
+        # if self.has_hdf5_data:
+        #     # If this is hdf5 data, open the file and grab the correct image.
+        #     with h5py.File(self.local_hdf5_path, "r") as open_file:
+        #         dataset = open_file[self.hdf5_internal_path]
+        #         img_arr = np.array(dataset[image_number])
+        #         return img_arr
+        # else:
+        #     # If these are separately stored images, grab the correct path from
+        #     # local_image_paths and load that specific image.
+        #     image_path = self.local_image_paths[image_number]
+        #     return np.array(PILImageModule.open(image_path))
 
         return I07Nexus.detector_size_dict[image_shape](name=found_phrase)
 
