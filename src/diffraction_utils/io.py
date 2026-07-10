@@ -1143,15 +1143,20 @@ class I07Nexus(NexusBase):
                 name=found_phrase.split("_")[0]
             )
 
-        image_string = (
-            str(self.nx_entry[found_phrase][signal_string].nxdata[0][0])
-            .split("/")[-1]
-            .strip("'")
-        )
+        first_signal_data = self.nx_entry[found_phrase][signal_string].nxdata[0]
+        if type(first_signal_data) is np.ndarray:
+            image_string = (
+                str(self.nx_entry[found_phrase][signal_string].nxdata[0][0])
+                .split("/")[-1]
+                .strip("'")
+            )
+        elif type(first_signal_data) is np.bytes0:
+            image_string = str(first_signal_data).split("/")[-1].strip("'")
+
         image_ends = [".tif", ".tiff"]
         if any(image_string.endswith(ending) for ending in image_ends):
             image_shape = np.array(
-                PIL.Image.open(self.local_data_path + "/" + image_string)
+                PIL.Image.open(str(self.local_data_path) + "/" + image_string)
             ).shape[-2:]
         # if self.has_hdf5_data:
         #     # If this is hdf5 data, open the file and grab the correct image.
