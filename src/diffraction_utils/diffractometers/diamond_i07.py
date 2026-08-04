@@ -75,6 +75,12 @@ class I07Diffractometer(DiffractometerBase):
         # alpha and omega.
         return alpha_rot * omega_rot
 
+    def calc_dcd_hor_angle(self):
+        lab_beam_vector = self._dcd_incident_beam_lab
+        lab_beam_arr = lab_beam_vector.array
+        tan_inc_angle = lab_beam_arr[0] / lab_beam_arr[2]
+        return np.degrees(np.arctan(tan_inc_angle))
+
     def get_detector_vector(self, frame: Frame) -> Vector3:
         # The following are the axis in the lab frame when all motors are @0.
         gamma_axis = np.array([0, 1, 0])
@@ -85,10 +91,7 @@ class I07Diffractometer(DiffractometerBase):
         # add in correction so that dcd is always along z - this assumes there
         # is never the need for a single crystal scanning when using the dcd
         if self.setup == self.dcd:
-            lab_beam_vector = self._dcd_incident_beam_lab
-            lab_beam_arr = lab_beam_vector.array
-            tan_inc_angle = lab_beam_arr[0] / lab_beam_arr[2]
-            inc_hor_angle = np.degrees(np.arctan(tan_inc_angle))
+            inc_hor_angle = 0 if self.data_file.using_dps else self.calc_dcd_hor_angle()
             gamma -= inc_hor_angle
 
         # Create the rotation objects.
@@ -118,9 +121,9 @@ class I07Diffractometer(DiffractometerBase):
         # rotate vector so that direction is along h in reciprocal space (this
         # assumes dcd ignores single crystal samples)
         lab_beam_arr = lab_beam_vector.array
-        tan_inc_angle = lab_beam_arr[0] / lab_beam_arr[2]
-        inc_hor_angle = np.degrees(np.arctan(tan_inc_angle))
-        rot_angle = -inc_hor_angle
+        # tan_inc_angle = lab_beam_arr[0] / lab_beam_arr[2]
+        # inc_hor_angle = np.degrees(np.arctan(tan_inc_angle))
+        rot_angle = -1 * self.calc_dcd_hor_angle()
         rotation_axis = np.array([0, 1, 0])
         dcd_rot = Rotation.from_rotvec(rotation_axis * rot_angle, degrees=True)
         lab_beam_vector.array = dcd_rot.apply(lab_beam_arr)
@@ -137,7 +140,7 @@ class I07Diffractometer(DiffractometerBase):
         # First get the displacement between the beam from the synchrotron and
         # the 2nd crystal in the DCD setup. Note that we need to convert to
         # rad.
-        omega = self.data_file.dcd_omega * np.pi / 180
+        omega = self.data_file.dcd_omega[0] * np.pi / 180
         beam_crystal_vector = np.array([np.cos(omega), np.sin(omega), 0])
         beam_crystal_vector *= self.data_file.dcd_circle_radius
 
@@ -146,7 +149,7 @@ class I07Diffractometer(DiffractometerBase):
         beam_crystal_vector = -beam_crystal_vector
 
         # Then simply add the displacement along the z-direction to the sample.
-        beam_crystal_vector += np.array([0, 0, self._dcd_sample_distance])
+        beam_crystal_vector += np.array([0, 0, self._dcd_sample_distance[0]])
 
         # We're expecting a unit vector.
         beam_crystal_vector /= np.linalg.norm(beam_crystal_vector)
