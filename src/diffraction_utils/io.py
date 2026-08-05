@@ -26,6 +26,7 @@ from warnings import warn
 import nexusformat.nexus.tree as nx
 import numpy as np
 import pandas as pd
+import PIL
 from nexusformat.nexus import nxload
 from scipy.constants import Planck, elementary_charge, speed_of_light
 
@@ -401,23 +402,14 @@ class I07Nexus(NexusBase):
             even when it isn't in use.
     """
 
-    # Detectors.
-    excalibur_04_2022 = excalibur_detector_info(name="exr")
-    excalibur_2022_fscan = excalibur_detector_info(name="EXCALIBUR")
-    excalibur_08_2023_stats = excalibur_detector_info(name="excstats")
-    excalibur_08_2023_roi = excalibur_detector_info(name="excroi")
+    detector_size_dict = {
+        (515, 2069): excalibur_detector_info,
+        (1679, 1475): p2m_detector_info,
+        (195, 487): p100k_detector_info,
+        (2162, 2068): eiger_detector_info,
+        (0, 0): detector_not_found,
+    }
 
-    p2r = p2m_detector_info(name="p2r")
-    pilatus_2021 = p2m_detector_info(name="pil2roi")
-    pilatus_2_stats = p2m_detector_info(name="pil2stats")
-
-    pilatus_2022 = p100k_detector_info(name="PILATUS")
-    pilatus_eh2_2022 = p100k_detector_info("pil3roi")
-    pilatus_eh2_stats = p100k_detector_info("pil3stats")
-    pilatus_eh2_scan = p100k_detector_info("p3r")
-
-    eiger_detector_01_2026 = eiger_detector_info(name="eir")
-    none_detector = detector_not_found(name="none")
     # Setups.
     horizontal = "horizontal"
     vertical = "vertical"
@@ -438,6 +430,8 @@ class I07Nexus(NexusBase):
 
         # We need to know what detector we're using before doing any further
         # initialization.
+        self.local_path = local_path
+        self.local_data_path = local_data_path
         self.nxfile = nxload(local_path)
         self.nx_entry = self._parse_nx_entry()
         self.detector_info = self._parse_detector_info()
@@ -845,7 +839,7 @@ class I07Nexus(NexusBase):
         camera, which we can parse exploiting the fact that we work out what
         the detector name is elsewhere.
         """
-        return self.nx_instrument[self.detector_info.name]
+        return self.nx_instrument[self.detector_info.name.split("_")[0]]
 
     def _parse_motors(self) -> Dict[str, np.ndarray]:
         """
@@ -932,7 +926,9 @@ class I07Nexus(NexusBase):
 
         motors_dict = {}
         ones = np.ones(self.scan_length)
-        found_motor_names = [name for name in motor_names if name in self.nx_instrument.keys()]
+        found_motor_names = [
+            name for name in motor_names if name in self.nx_instrument.keys()
+        ]
         for name in found_motor_names:
             # This could be a link to the data, a single value or a numpy array
             # containing varying values. We need to handle all three cases. The
@@ -1099,7 +1095,7 @@ class I07Nexus(NexusBase):
         """
         Returns the z2-value of the DPS system. Division by 1e3 converts to m.
         """
-        if (self.is_eh1)&("dpsz2" in self.motors.keys()):
+        if (self.is_eh1) & ("dpsz2" in self.motors.keys()):
             return self.motors["dpsz2"] / 1e3
 
     def _parse_detector_info(self) -> detector_info:
@@ -1107,31 +1103,74 @@ class I07Nexus(NexusBase):
         Returns the name of the detector that we're using. Because life sucks,
         this is a function of time.
         """
-        checknames = {
-            "exr": I07Nexus.excalibur_04_2022,
-            "pil2roi": I07Nexus.pilatus_2021,
-            "PILATUS": I07Nexus.pilatus_2022,
-            "pil2stats": I07Nexus.pilatus_2_stats,
-            "p2r": I07Nexus.p2r,
-            "EXCALIBUR": I07Nexus.excalibur_2022_fscan,
-            "pil3roi": I07Nexus.pilatus_eh2_2022,
-            "pil3stats": I07Nexus.pilatus_eh2_stats,
-            "p3r": I07Nexus.pilatus_eh2_scan,
-            "excroi": I07Nexus.excalibur_08_2023_roi,
-            "eir": I07Nexus.eiger_detector_01_2026,
-            "excstats": I07Nexus.excalibur_08_2023_stats,
-        }
-        # assuming duplicate value is from obsolete naming - "excroi":I07Nexus.excalibur_detector_2021,
 
-        for key, val in checknames.items():
-            if key in self.nx_entry:
-                return val
+        detector_keynames = [
+            "exr",
+            "pil2roi",
+            "PILATUS",
+            "pil2stats",
+            "p2r",
+            "EXCALIBUR",
+            "pil3roi",
+            "pil3stats",
+            "p3r",
+            "excroi",
+            "eir",
+            "excstats",
+        ]
+        found_det_keys = [
+            key for key in self.nx_entry.keys() if key in detector_keynames
+        ]
+        endings = ["data", "image_data"]
+        found_data_keys = [
+            f"{found_det_keys[0]}_{ending}"
+            for ending in endings
+            if f"{found_det_keys[0]}_{ending}" in self.nx_entry.keys()
+        ]
 
-        for key, val in checknames.items():
-            if key in self.nx_entry.NXinstrument[0]:
-                return val
-        return I07Nexus.none_detector
-        # pylint: disable=invalid-name
+        image_shape = (0, 0)
+        found_phrase = "none"
+        if len(found_data_keys) > 0:
+            found_phrase = found_data_keys[0]
+
+        elif len(found_det_keys) > 0:
+            found_phrase = found_det_keys[0]
+
+        signal_string = self.nx_entry[found_phrase].signal
+        if signal_string == "data":
+            image_shape = self.nx_entry[found_phrase][signal_string].shape[-2:]
+            return I07Nexus.detector_size_dict[image_shape](
+                name=found_phrase.split("_")[0]
+            )
+
+        first_signal_data = self.nx_entry[found_phrase][signal_string].nxdata[0]
+        if type(first_signal_data) is np.ndarray:
+            image_string = (
+                str(self.nx_entry[found_phrase][signal_string].nxdata[0][0])
+                .split("/")[-1]
+                .strip("'")
+            )
+        elif type(first_signal_data) is np.bytes0:
+            image_string = str(first_signal_data).split("/")[-1].strip("'")
+
+        image_ends = [".tif", ".tiff"]
+        if any(image_string.endswith(ending) for ending in image_ends):
+            image_shape = np.array(
+                PIL.Image.open(str(self.local_data_path) + "/" + image_string)
+            ).shape[-2:]
+        # if self.has_hdf5_data:
+        #     # If this is hdf5 data, open the file and grab the correct image.
+        #     with h5py.File(self.local_hdf5_path, "r") as open_file:
+        #         dataset = open_file[self.hdf5_internal_path]
+        #         img_arr = np.array(dataset[image_number])
+        #         return img_arr
+        # else:
+        #     # If these are separately stored images, grab the correct path from
+        #     # local_image_paths and load that specific image.
+        #     image_path = self.local_image_paths[image_number]
+        #     return np.array(PILImageModule.open(image_path))
+
+        return I07Nexus.detector_size_dict[image_shape](name=found_phrase.split("_")[0])
 
     def _parse_default_axis_type(self) -> str:
         """
@@ -1170,7 +1209,7 @@ class I07Nexus(NexusBase):
         if self.detector_info.name == "excroi":
             return [self._get_ith_region(i=1)]
         # This attempts to parse an invalid json file.
-        if self.detector_info.name == I07Nexus.excalibur_04_2022.name:
+        if self.detector_info.name == "exr":
             # Make sure our code executes for bytes and strings.
             try:
                 json_str = self.nx_instrument["ex_rois/excalibur_ROIs"]._value.decode(
@@ -1186,34 +1225,33 @@ class I07Nexus(NexusBase):
             roi_dict = json.loads(json_str)
             return [Region.from_dict(roi_dict["Region_1"])]
 
-        if self.detector_info.name == I07Nexus.excalibur_08_2023_roi.name:
-            regionsfull = list(
-                filter(lambda x: "Region" in x, self.nx_instrument.excroi.keys())
-            )
-            regionsnum = len(regionsfull) / 10
-            total_dict = {}
-            data = self.nx_instrument.excroi
-            # create whole dictionary based on full list of regions, but select
-            # first value in from X,Y,Width,Height lists
-            for n in np.arange(int(regionsnum)):
-                roi_dict = {
-                    f"Region_{n + 1}": {
-                        "x": data[f"Region_{n + 1}_X"][0]._value,
-                        "width": data[f"Region_{n + 1}_Width"][0]._value,
-                        "y": data[f"Region_{n + 1}_Y"][0]._value,
-                        "height": data[f"Region_{n + 1}_Height"][0]._value,
-                    }
-                }
-                total_dict.update(roi_dict)
-            # use similar setting to other version where it returns just the
-            # region of region1
-            return [Region.from_dict(total_dict["Region_1"])]
-        if self.detector_info.name == I07Nexus.excalibur_2022_fscan.name:
+        # if self.detector_info.name == I07Nexus.excalibur_08_2023_roi.name:
+        #     regionsfull = list(
+        #         filter(lambda x: "Region" in x, self.nx_instrument.excroi.keys())
+        #     )
+        #     regionsnum = len(regionsfull) / 10
+        #     total_dict = {}
+        #     data = self.nx_instrument.excroi
+        #     # create whole dictionary based on full list of regions, but select
+        #     # first value in from X,Y,Width,Height lists
+        #     for n in np.arange(int(regionsnum)):
+        #         roi_dict = {
+        #             f"Region_{n + 1}": {
+        #                 "x": data[f"Region_{n + 1}_X"][0]._value,
+        #                 "width": data[f"Region_{n + 1}_Width"][0]._value,
+        #                 "y": data[f"Region_{n + 1}_Y"][0]._value,
+        #                 "height": data[f"Region_{n + 1}_Height"][0]._value,
+        #             }
+        #         }
+        #         total_dict.update(roi_dict)
+        #     # use similar setting to other version where it returns just the
+        #     # region of region1
+        #     return [Region.from_dict(total_dict["Region_1"])]
+        return_names = ["EXCALIBUR", "excstats"]
+        if self.detector_info.name in return_names:
             # Just ignore the region of interest for fscans.
             return
-        if self.detector_info.name == I07Nexus.excalibur_08_2023_stats.name:
-            # Just ignore use of regions if using excstats.
-            return
+
         raise NotImplementedError()
 
     @warn_missing_metadata
@@ -1250,7 +1288,7 @@ class I07Nexus(NexusBase):
         excalibur_roi_list = [
             "exr",
             "EXCALIBUR",
-        ]  # I07Nexus.excalibur_04_2022, I07Nexus.excalibur_2022_fscan]
+        ]
         if self.detector_info.name in excalibur_roi_list:
             # Make sure our code executes for bytes and strings.
             try:
