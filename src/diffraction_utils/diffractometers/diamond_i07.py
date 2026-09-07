@@ -40,9 +40,9 @@ class I07Diffractometer(DiffractometerBase):
         super().__init__(data_file, sample_oop)
         self.setup = setup
 
-    def get_u_matrix(self, scan_index: int) -> Rotation:
+    def get_diff_matrix(self, scan_index: int) -> Rotation:
         # The following are the axis in the lab frame when all motors are @0.
-        # Note that omega is like theta but for the vertical axis (I think!)
+        #
         alpha_axis = np.array([0, 1, 0])
         omega_axis = np.array([-1, 0, 0])
 

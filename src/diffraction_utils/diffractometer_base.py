@@ -7,8 +7,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from .frame_of_reference import Frame
 from .data_file import DataFileBase
+from .frame_of_reference import Frame
 from .vector import Vector3, rot_from_a_to_b
 
 
@@ -18,8 +18,7 @@ class DiffractometerBase(ABC):
     have.
     """
 
-    def __init__(self, data_file: DataFileBase,
-                 sample_oop: np.ndarray) -> None:
+    def __init__(self, data_file: DataFileBase, sample_oop: np.ndarray) -> None:
         self.data_file = data_file
         self.sample_oop = sample_oop
         if not isinstance(sample_oop, Vector3):
@@ -140,29 +139,25 @@ class DiffractometerBase(ABC):
         return lab_beam
 
     @abstractmethod
-    def get_u_matrix(self, scan_index: int) -> Rotation:
+    def get_diff_matrix(self, scan_index: int) -> Rotation:
         """
-        The scipy Rotation from of the so-called "U" rotation matrix. This must
-        be calculated in children of DiffractometerBase on a diffractometer-by-
+        This must be calculated in children of DiffractometerBase on a diffractometer-by-
         diffractometer basis.
 
         Args:
             scan_index:
-                The U matrix generally varies throughout a scan. The scan_index
+                The diffractometer position varies throughout a scan. The scan_index
                 parameter specified which step of the scan we want to generate
-                a U matrix for.
+                a diffractometer matrix for.
 
         Returns:
-            Instance of Rotation corresponding to the U matrix of interest.
+            Instance of Rotation corresponding to the diffractometer matrix of interest.
         """
 
-    def get_b_matrix(self) -> Rotation:
+    def get_sample_matrix(self) -> Rotation:
         """
-        The scipy Rotation form of the so-called "B" rotation matrix. This
-        matrix maps vectors from the reciprocal lattice's hkl frame to a
-        coordinate frame anchored to the sample holder. This could be made a
-        property, but is left as a method for symmetry with the U and UB
-        matrices.
+        This matrix maps vectors from the reciprocal lattice's hkl frame to a
+        coordinate frame anchored to the sample holder.
 
         TODO: generalize so that this works for non-cubic crystals. This should
             be implemented by making Vector3's sentient of their basis vectors,
@@ -175,22 +170,21 @@ class DiffractometerBase(ABC):
         holder_oop = Vector3([0, 1, 0], Frame(Frame.sample_holder, self))
         return rot_from_a_to_b(self.sample_oop, holder_oop)
 
-    def get_ub_matrix(self, scan_index: int) -> Rotation:
+    def get_diffsample_matrix(self, scan_index: int) -> Rotation:
         """
-        The scipy Rotation form of the so-called "UB" rotation matrix.
+        A combination of the diffractometer and sample matrices.
 
         Args:
             scan_index:
-                The UB matrix generally varies throughout a scan, as the motion
-                of the diffractometer motors affects the U matrix. The
-                scan_index parameter specified which step of the scan we want to
-                generate a U matrix (and therefore also the UB matrix) for.
+                The diffractometer position varies throughout a scan. The scan_index
+                parameter specified which step of the scan we want to generate
+                a diffractometer matrix for.
 
         Returns:
-            Instance of Rotation corresponding to the UB matrix for the
+            Instance of Rotation corresponding to the combined diffractometer and sample matrix for the
             scan_index of interest.
         """
-        return self.get_u_matrix(scan_index) * self.get_b_matrix()
+        return self.get_diff_matrix(scan_index) * self.get_sample_matrix()
 
     def rotate_vector_to_frame(self, vector: Vector3, to_frame: Frame) -> None:
         """
@@ -214,34 +208,39 @@ class DiffractometerBase(ABC):
         # Okay, we're changing frame. We have to handle each case individually.
         match vector.frame.frame_name, to_frame.frame_name:
             case Frame.lab, Frame.hkl:
-                # To go from the lab to hkl we need the inverse of UB.
-                rot = self.get_ub_matrix(vector.frame.scan_index).inv()
+                # To go from the lab to hkl we need the inverse of diffractometer matrix.
+                # the inverse sample UB is applied in image.q_vectors when hkl is the output frame.
+                rot = self.get_diffsample_matrix(vector.frame.scan_index).inv()
             case Frame.lab, Frame.qxqyqz:
-                #To go from the lab to cartesian, on the sample surface,\
+                # To go from the lab to cartesian, on the sample surface,\
                 #  but not matched to lattice parameters
-                rot = self.get_ub_matrix(vector.frame.scan_index).inv()
+                # the inverse sample U is applied in image.q_vectors when qxqyqz is the output frame
+                rot = self.get_diffsample_matrix(vector.frame.scan_index).inv()
             case Frame.lab, Frame.sample_holder:
-                # To go from the lab to the sample holder we just need U^-1.
-                rot = self.get_u_matrix(vector.frame.scan_index).inv()
+                # To go from the lab to the sample holder we need the inverse of diffractometer matrix.
+                rot = self.get_diff_matrix(vector.frame.scan_index).inv()
 
             case Frame.sample_holder, Frame.lab:
-                # We can use U to go from the sample holder to the lab.
-                rot = self.get_u_matrix(to_frame.scan_index)
+                # We can use the diffractometer matrix to go from the sample holder to the lab.
+                rot = self.get_diff_matrix(to_frame.scan_index)
             case Frame.sample_holder, Frame.hkl:
                 # We can use B^-1 to go from the sample holder to hkl space.
-                rot = self.get_b_matrix().inv()
+                # the inverse sample UB is applied in image.q_vectors when hkl is the output frame.
+                rot = self.get_sample_matrix().inv()
 
             case Frame.hkl, Frame.lab:
-                # This is precisely what the UB matrix is for!
-                rot = self.get_ub_matrix(to_frame.scan_index)
+                # This has not been tested, to start from hkl the sample UB needs to be applied in image.q_vectors when hkl is the input frame.
+                rot = self.get_diffsample_matrix(to_frame.scan_index)
+
             case Frame.hkl, Frame.sample_holder:
-                # This is what defines the B matrix.
-                rot = self.get_b_matrix()
+                # This has not been tested, to start from hkl the sample UB needs to be applied in image.q_vectors when hkl is the input frame.
+                rot = self.get_sample_matrix()
 
             case _:
                 # Invalid frame name, raise an error
                 raise ValueError(
-                    "Tried to rotate to or from a frame with an invalid name.")
+                    "Tried to rotate to or from a frame with an invalid name."
+                )
 
         # Apply the rotation to the vector we were given.
         vector.array = rot.apply(vector.array)
