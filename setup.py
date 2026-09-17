@@ -1,5 +1,5 @@
 """
-latest version created: parsing_detector in diffraction_utils/
+latest version created: tiff_dat_extract in diffraction_utils/
 Simple setup.py file.
 """
 
